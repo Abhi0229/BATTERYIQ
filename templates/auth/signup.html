@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Sign Up — BatteryIQ{% endblock %}
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height:85vh">
+  <div class="col-md-5">
+
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-success">⚡ BatteryIQ</h2>
+      <p class="text-muted">Create your account</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+          {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="card bg-dark border-secondary shadow-lg">
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('signup') }}">
+
+          <div class="mb-3">
+            <label class="form-label text-light">Full Name</label>
+            <input type="text" name="name" class="form-control bg-secondary text-light border-0"
+                   placeholder="John Doe" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-light">Email address</label>
+            <input type="email" name="email" class="form-control bg-secondary text-light border-0"
+                   placeholder="you@example.com" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-light">Password</label>
+            <input type="password" name="password" class="form-control bg-secondary text-light border-0"
+                   placeholder="Min. 6 characters" minlength="6" required>
+          </div>
+
+          <!-- Role Selection -->
+          <div class="mb-4">
+            <label class="form-label text-light">I am a...</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="role" id="roleDriver" value="driver" required>
+                <label class="btn btn-outline-info w-100" for="roleDriver">
+                  🚗 Driver
+                </label>
+              </div>
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="role" id="roleTech" value="technician">
+                <label class="btn btn-outline-warning w-100" for="roleTech">
+                  🔧 Technician
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 fw-bold">Create Account</button>
+        </form>
+        <hr class="border-secondary">
+        <p class="text-center text-muted mb-0">
+          Already have an account? 
+          <a href="{{ url_for('login') }}" class="text-success">Login</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{
+    "models": {
+        "stress_model": "stress_model.pkl",
+        "health_model": "health_model.pkl",
+        "rul_model": "rul_model.pkl",
+        "eff_model": "eff_model.pkl"
+    },
+    "features": [
+        "voltage_mean",
+        "voltage_min",
+        "voltage_std",
+        "current_mean",
+        "current_std",
+        "current_min",
+        "temp_mean",
+        "temp_max",
+        "temp_std",
+        "duration",
+        "voltage_load_mean",
+        "voltage_range",
+        "temp_rise",
+        "power_mean",
+        "energy_delivered",
+        "ambient_temperature",
+        "cycle_number"
+    ],
+    "performance": {
+        "stress_accuracy": "97.25%",
+        "health_r2": "97.85%",
+        "rul_r2": "95.53%",
+        "efficiency_r2": "99.99%"
+    },
+    "targets": {
+        "stress_label": "Low / Medium / High",
+        "health_score": "0 to 100",
+        "RUL": "Cycles remaining",
+        "efficiency_score": "0 to 100"
+    }
+}

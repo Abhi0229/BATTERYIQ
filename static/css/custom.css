@@ -1,0 +1,706 @@
+/* ============================================
+   BatteryIQ — Custom CSS
+============================================ */
+
+:root {
+    --primary-dark:  #0a0e1a;
+    --secondary-dark:#111827;
+    --card-dark:     #1a2235;
+    --border-color:  #2a3547;
+    --accent-green:  #00d97e;
+    --accent-blue:   #3b82f6;
+    --accent-yellow: #f59e0b;
+    --accent-red:    #ef4444;
+    --text-primary:  #f1f5f9;
+    --text-muted:    #94a3b8;
+}
+
+/* ── Base ── */
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--primary-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* ── Navbar ── */
+#mainNavbar {
+    background: rgba(10, 14, 26, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 0;
+}
+
+.brand-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #00d97e, #3b82f6);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+}
+
+.brand-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.1;
+}
+
+.brand-tag {
+    font-size: 0.6rem;
+    color: var(--accent-green);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.nav-link {
+    color: var(--text-muted) !important;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: white !important;
+    background: var(--card-dark);
+}
+
+.btn-battery {
+    background: linear-gradient(135deg, #00d97e, #3b82f6);
+    color: white !important;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+    text-decoration: none;
+}
+
+.btn-battery:hover { opacity: 0.85; }
+
+/* ── Main Content ── */
+.main-content { padding-top: 75px; }
+
+/* ── Cards ── */
+.iq-card {
+    background: var(--card-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.iq-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+/* ── Metric Cards ── */
+.metric-card {
+    background: var(--card-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+.metric-status {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+/* ── Colors ── */
+.text-success  { color: var(--accent-green)  !important; }
+.text-primary  { color: var(--accent-blue)   !important; }
+.text-warning  { color: var(--accent-yellow) !important; }
+.text-danger   { color: var(--accent-red)    !important; }
+
+/* ── Progress Bars ── */
+.iq-progress {
+    height: 10px;
+    background: var(--border-color);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.iq-progress-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 1s ease;
+}
+
+/* ── Form Controls ── */
+.iq-form-control {
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    padding: 0.6rem 1rem;
+    width: 100%;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.iq-form-control:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    background: var(--secondary-dark);
+    color: var(--text-primary);
+}
+
+.iq-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+/* ── Buttons ── */
+.btn-iq-primary {
+    background: linear-gradient(135deg, #00d97e, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    width: 100%;
+}
+
+.btn-iq-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-iq-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Section Headers ── */
+.section-badge {
+    display: inline-block;
+    background: rgba(0, 217, 126, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(0, 217, 126, 0.3);
+    border-radius: 99px;
+    padding: 0.25rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+/* ── Alert Box ── */
+.iq-alert {
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid;
+    margin-bottom: 1rem;
+}
+
+.iq-alert-success {
+    background: rgba(0, 217, 126, 0.1);
+    border-color: rgba(0, 217, 126, 0.3);
+    color: var(--accent-green);
+}
+
+.iq-alert-info {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: var(--accent-blue);
+}
+
+.iq-alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--accent-yellow);
+}
+
+.iq-alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--accent-red);
+}
+
+/* ── Footer ── */
+.footer {
+    background: var(--secondary-dark);
+    border-top: 1px solid var(--border-color);
+    margin-top: 4rem;
+}
+
+.footer-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+}
+
+.footer-link:hover { color: white; }
+
+/* ── Loading Spinner ── */
+.iq-spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .metric-value { font-size: 2rem; }
+    .iq-card { padding: 1rem; }
+}
+/* ── Hero Section ── */
+.hero-section {
+    background: radial-gradient(ellipse at top left,
+        rgba(0, 217, 126, 0.08) 0%,
+        transparent 50%),
+        radial-gradient(ellipse at bottom right,
+        rgba(59, 130, 246, 0.08) 0%,
+        transparent 50%);
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, #00d97e, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 480px;
+}
+
+.hero-stat { text-align: center; }
+.hero-stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent-green);
+}
+.hero-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.hero-card {
+    background: var(--card-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.live-badge {
+    background: rgba(0,217,126,0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(0,217,126,0.3);
+    border-radius: 99px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.live-dot {
+    width: 8px; height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+.mini-metric-card {
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.mini-metric-icon { font-size: 1.3rem; margin-bottom: 0.3rem; }
+.mini-metric-value { font-size: 1.4rem; font-weight: 700; }
+.mini-metric-label { font-size: 0.7rem; color: var(--text-muted); }
+
+/* ── Feature Cards ── */
+.feature-icon { font-size: 2.5rem; }
+
+/* ── User Cards ── */
+.user-card { display: flex; flex-direction: column; }
+.user-card-icon { font-size: 2.5rem; }
+
+/* ── Outline Button ── */
+.btn-outline-iq {
+    background: transparent;
+    color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-outline-iq:hover {
+    background: var(--card-dark);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+
+/* ── Dashboard Enhancements ── */
+.page-header {
+    padding: 2rem 0 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Smooth metric card hover */
+.metric-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+/* Glow effect on primary button */
+.btn-iq-primary:not(:disabled):hover {
+    box-shadow: 0 4px 20px rgba(0, 217, 126, 0.3);
+}
+
+/* History page card improvements */
+.card { border-radius: 14px !important; }
+
+/* Welcome banner — shared by driver & technician */
+.welcome-banner {
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.5rem;
+}
+.welcome-banner-driver { background: linear-gradient(135deg, rgba(0,217,126,0.08), rgba(59,130,246,0.08)); }
+.welcome-banner-tech   { background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(59,130,246,0.08)); }
+.welcome-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+.welcome-avatar-driver { background: rgba(0,217,126,0.1); }
+.welcome-avatar-tech   { background: rgba(245,158,11,0.1); }
+
+/* Slider */
+.slider-val { min-width: 75px; text-align: right; font-weight: 700; color: var(--accent-green); font-size: 0.95rem; }
+.form-range::-webkit-slider-thumb { background: var(--accent-green); }
+.form-range::-webkit-slider-runnable-track { background: var(--border-color); border-radius: 99px; }
+
+/* Tips list */
+.tips-list { list-style: none; padding: 0; margin: 0; }
+.tip-item { padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-muted); }
+.tip-item:last-child { border-bottom: none; }
+
+/* Quick guide */
+.quick-tip { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted); }
+.quick-tip:last-child { border-bottom: none; }
+.qt-icon { font-size: 1.1rem; }
+
+/* Stat pills */
+.mini-stat-pill { border-radius: 99px; padding: 0.2rem 0.75rem; font-size: 0.75rem; font-weight: 600; border: 1px solid; background: rgba(0,217,126,0.1); color: var(--accent-green); border-color: rgba(0,217,126,0.2); }
+
+/* Placeholder float animation */
+.placeholder-anim { animation: iq-float 3s ease-in-out infinite; }
+@keyframes iq-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* Sensor groups (technician) */
+.sensor-group { background: var(--secondary-dark); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; }
+.sensor-group-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 0.75rem; }
+
+/* Sensor table */
+.iq-table { color: var(--text-primary); }
+.iq-table thead th { border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+.iq-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.badge-iq-success { background: rgba(0,217,126,0.15); color: var(--accent-green); border-radius: 99px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; }
+.badge-iq-warning { background: rgba(245,158,11,0.15); color: var(--accent-yellow); border-radius: 99px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; }
+
+/* ── Feature List (index user cards) ── */
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.feature-list-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.feature-list-item:last-child {
+    border-bottom: none;
+}
+
+.feature-list-item i {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+/* ── Navbar Account Dropdown ── */
+.nav-account {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--card-dark);
+    transition: all 0.2s;
+    color: white !important;
+}
+.nav-account:hover {
+    border-color: var(--accent-green);
+    background: var(--secondary-dark);
+}
+.nav-account::after { display: none; } /* hide default caret */
+
+.nav-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; color: white;
+    flex-shrink: 0;
+}
+.nav-avatar-driver { background: linear-gradient(135deg, #00d97e, #06b6d4); }
+.nav-avatar-tech   { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+.nav-username {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: white;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── IQ Dropdown Menu ── */
+.iq-dropdown {
+    background: var(--card-dark) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 14px !important;
+    padding: 0.5rem !important;
+    min-width: 220px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important;
+}
+
+.dropdown-header-info {
+    padding: 0.5rem 0.75rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.role-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 99px;
+    padding: 0.15rem 0.6rem;
+}
+.role-driver {
+    background: rgba(0,217,126,0.15);
+    color: var(--accent-green);
+    border: 1px solid rgba(0,217,126,0.3);
+}
+.role-tech {
+    background: rgba(245,158,11,0.15);
+    color: var(--accent-yellow);
+    border: 1px solid rgba(245,158,11,0.3);
+}
+
+.iq-dropdown-item {
+    color: var(--text-muted) !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.88rem !important;
+    transition: all 0.15s !important;
+    display: flex !important;
+    align-items: center !important;
+}
+.iq-dropdown-item:hover {
+    background: var(--secondary-dark) !important;
+    color: white !important;
+}
+.iq-dropdown-item.text-danger:hover {
+    background: rgba(239,68,68,0.1) !important;
+    color: var(--accent-red) !important;
+}
+
+/* ── Flash Messages (global) ── */
+.flash-container {
+    position: fixed;
+    top: 80px;
+    right: 1.5rem;
+    z-index: 9999;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.flash-msg {
+    border-radius: 10px !important;
+    font-size: 0.88rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+/* ── Text Visibility Fixes ── */
+/* Ensure all body text is visible on dark background */
+p, li, span, label, small, div {
+    /* Don't override color globally — only fix specific muted cases */
+}
+
+/* Muted text — slightly brighter so it's readable */
+.text-muted {
+    color: #8b9ab0 !important;
+}
+
+/* Card text always visible */
+.iq-card p,
+.iq-card li,
+.iq-card span:not(.badge):not(.section-badge) {
+    color: var(--text-muted);
+}
+
+.iq-card h1, .iq-card h2, .iq-card h3,
+.iq-card h4, .iq-card h5, .iq-card h6 {
+    color: var(--text-primary);
+}
+
+/* Welcome banner subtitle */
+.welcome-banner .text-muted {
+    color: #8b9ab0 !important;
+}
+
+/* History page table text */
+.table-dark td, .table-dark th {
+    color: var(--text-primary) !important;
+}
+
+/* History summary cards */
+.card.bg-dark {
+    background: var(--card-dark) !important;
+}
+.card.bg-dark .text-muted {
+    color: #8b9ab0 !important;
+}
+
+/* ── Hero card cycling controls ── */
+.hero-nav-btn {
+    width: 28px; height: 28px;
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.hero-nav-btn:hover {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.hero-progress-track {
+    width: 80px; height: 3px;
+    background: var(--border-color);
+    border-radius: 99px;
+    overflow: hidden;
+}
+.hero-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00d97e, #3b82f6);
+    border-radius: 99px;
+    width: 0%;
+}
+
+/* ── Hero showcase tabs ── */
+.showcase-tab {
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.showcase-tab:hover { border-color: var(--accent-green); color: white; }
+.showcase-tab.active {
+    background: var(--card-dark);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+/* Context description */
+.showcase-context {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    background: var(--secondary-dark);
+    border-left: 3px solid var(--accent-green);
+    border-radius: 0 8px 8px 0;
+    padding: 0.6rem 0.9rem;
+    line-height: 1.5;
+}

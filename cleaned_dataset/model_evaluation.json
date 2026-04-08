@@ -1,0 +1,9 @@
+{
+    "stress_accuracy": 97.25,
+    "health_r2": 0.9785,
+    "health_mae": 0.53,
+    "rul_r2": 0.9553,
+    "rul_mae": 3.8,
+    "efficiency_r2": 0.9999,
+    "efficiency_mae": 0.04
+}
