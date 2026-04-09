@@ -99,7 +99,7 @@ export default function Navbar() {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'py-3' : 'py-5'}`}>
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-500 ${scrolled ? 'scale-95' : 'scale-100'}`}>
-        <div className={`glass-strong rounded-[24px] border border-white/10 shadow-2xl transition-all duration-500 px-6 lg:px-8 ${scrolled ? 'bg-[#020617]/80 backdrop-blur-xl' : 'bg-transparent overflow-visible'}`}>
+        <div className={`glass-strong rounded-[32px] border border-white/10 shadow-2xl transition-all duration-500 px-6 lg:px-10 ${scrolled ? 'bg-[#020617]/90 backdrop-blur-2xl' : 'bg-[#020617]/40 backdrop-blur-md'} overflow-visible`}>
           <div className="flex items-center justify-between h-16 lg:h-18">
 
             {/* Logo */}

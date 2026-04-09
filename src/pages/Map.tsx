@@ -73,8 +73,8 @@ export default function MapPage() {
     }).setView(MUMBAI_CENTER, 12);
     mapRef.current = map;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO',
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
     }).addTo(map);
 
@@ -185,13 +185,30 @@ export default function MapPage() {
       }).addTo(mapRef.current);
 
       routeLayerRef.current = roadLayer;
-      mapRef.current.fitBounds(roadLayer.getBounds(), { padding: [80, 80], animate: true });
+      mapRef.current.fitBounds(roadLayer.getBounds(), { padding: [100, 100], animate: true });
       toast.success("Optimum Route Found!", { id: toastId });
     } catch (err) {
       toast.error("⚠️ Signal Lost: Route Offline.", { id: toastId });
     } finally {
       setRouting(false);
     }
+  }
+
+  async function relocateUser() {
+    if (!mapRef.current) return;
+    const toastId = toast.loading("Triangulating Coordinates...");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setUserPos(latlng);
+        mapRef.current.flyTo(latlng, 15, { animate: true, duration: 1.5 });
+        toast.success("Position Locked", { id: toastId });
+      },
+      () => {
+        toast.error("Signal Interference: GPS Unavailable", { id: toastId });
+      },
+      { enableHighAccuracy: true }
+    );
   }
 
   const clearRoute = () => {
@@ -209,45 +226,71 @@ export default function MapPage() {
     );
   }, [search, filter]);
 
+  const chargingCount = useMemo(() => ALL_LOCS.filter(l => l.type !== 'Service').length, []);
+  const garageCount   = useMemo(() => ALL_LOCS.filter(l => l.type === 'Service').length, []);
+
   return (
     <div className="flex flex-col h-screen bg-[#020617] text-white">
       <Navbar />
       
       {/* Structural Containment: Hero Area */}
-      <div className="flex flex-col flex-1 pt-16 relative overflow-hidden">
+      <div className="flex flex-col flex-1 pt-24 lg:pt-36 relative overflow-hidden">
         
-        {/* Navigation Control Bar */}
-        <div className="glass-strong border-b border-white/5 px-8 py-5 flex items-center justify-between z-40 bg-[#020617]/80 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/20 rounded-2xl border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-              <Navigation className="w-5 h-5 text-primary" />
+        {/* Pro-Grade Header (Legacy Restored & Modernized) */}
+        <div className="glass-strong border-b border-white/5 px-8 py-6 flex items-center justify-between z-40 bg-[#020617]/80 backdrop-blur-md">
+          <div className="flex items-center gap-5">
+            <div className="p-4 bg-primary/20 rounded-[22px] border border-primary/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+              <MapPin className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-base font-black tracking-tight leading-none">Fleet Map v2</h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1.5 font-bold">Smart Positioning Active</p>
+              <h1 className="text-xl font-black tracking-tight leading-tight flex items-center gap-2">
+                EV Station & Garage Finder
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 animate-pulse">LIVE</span>
+              </h1>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1 font-bold">Live map based on your current location</p>
             </div>
           </div>
 
-          <div className="flex-1 max-w-sm mx-12 relative hidden xl:block">
+          <div className="flex-1 max-w-sm mx-12 relative hidden 2xl:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Locate Charging Infrastructure..." 
-              className="w-full pl-12 pr-6 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-xs focus:outline-none focus:border-primary/50 transition-all font-medium"
+              placeholder="Search by Infrastructure Name..." 
+              className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs focus:outline-none focus:border-primary/50 transition-all font-medium"
             />
           </div>
 
-          <div className="flex gap-2">
-            {(['All', 'Ultra', 'Service'] as const).map(f => (
+          <div className="flex items-center gap-4">
+            <div className="flex bg-white/5 rounded-[20px] p-1 border border-white/10 hidden xl:flex">
+              {(['All', 'Ultra', 'Service'] as const).map(f => (
+                <button 
+                  key={f}
+                  onClick={() => setFilter(f as any)}
+                  className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase transition-all tracking-wider ${filter === f ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'text-muted-foreground hover:bg-white/5 hover:text-white'}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-px h-8 bg-white/10 mx-2 hidden xl:block" />
+
+            <div className="flex gap-3">
+              <select className="bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-[11px] font-black uppercase text-white/70 focus:outline-none hover:bg-white/10 transition-all cursor-pointer">
+                <option value="5">5 KM Radius</option>
+                <option value="10">10 KM Radius</option>
+                <option value="25">25 KM Radius</option>
+              </select>
+
               <button 
-                key={f}
-                onClick={() => setFilter(f as any)}
-                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-wider ${filter === f ? 'bg-primary text-white shadow-xl shadow-primary/40' : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'}`}
+                onClick={relocateUser}
+                className="flex items-center gap-2 px-6 py-3 bg-[#0ea5e9]/10 hover:bg-[#0ea5e9] text-[#0ea5e9] hover:text-white border border-[#0ea5e9]/30 rounded-2xl text-[11px] font-black uppercase transition-all shadow-lg active:scale-95 group"
               >
-                {f}
+                <LocateFixed className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+                Relocate Me
               </button>
-            ))}
+            </div>
           </div>
         </div>
 
@@ -256,9 +299,9 @@ export default function MapPage() {
           
           {/* Left Directory */}
           <div className="w-[340px] glass-strong border-r border-white/5 flex flex-col hidden lg:flex bg-[#020617]/50">
-            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-secondary tracking-[0.2em]">Operational Nodes</span>
-              <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-muted-foreground">{filtered.length} total</span>
+            <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-secondary tracking-[0.2em]">Infrastructure Nodes</span>
+              <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-muted-foreground font-mono">{filtered.length}</span>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
               <div className="space-y-2">
@@ -289,7 +332,37 @@ export default function MapPage() {
           {/* Map Surface */}
           <div className="flex-1 relative bg-[#0f172a]">
             
-            {/* HUD Overlay */}
+            {/* HUD Status Pills (Floating directly on map) */}
+            <div className="absolute top-6 left-6 z-30 flex gap-3">
+              <div className="flex items-center gap-3 px-5 py-3 glass-strong border border-white/10 rounded-2xl shadow-2xl">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/20">
+                  <Zap className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-white/80 uppercase">Charging</span>
+                  <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md">{chargingCount}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-5 py-3 glass-strong border border-white/10 rounded-2xl shadow-2xl">
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center border border-yellow-500/20">
+                  <Wrench className="w-4 h-4 text-yellow-500" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-white/80 uppercase">Garages</span>
+                  <span className="text-xs font-black text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-md">{garageCount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trajectory Info Ribbon (Floating at bottom) */}
+            <div className="absolute bottom-8 left-8 z-30 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+               <div className="flex items-center gap-3 px-4 py-2 bg-[#020617]/90 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_#3b82f6]" />
+                  <span className="text-[10px] font-black text-blue-400/80 uppercase tracking-widest">Using demo data — live API unavailable</span>
+               </div>
+            </div>
+            
+            {/* HUD Route Overlay */}
             {routeInfo && (
               <div className="absolute top-8 left-1/2 -translate-x-1/2 z-[1000] animate-in slide-in-from-top-12 duration-700">
                 <div className="flex items-center gap-10 px-10 py-6 bg-[#020617]/95 backdrop-blur-2xl border border-primary/40 rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.8)]">
