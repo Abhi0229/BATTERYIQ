@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — BatteryIQ{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:540px">
+
+  <div class="mb-4">
+    <div class="section-badge"><i class="bi bi-person-gear me-1"></i> Account Settings</div>
+    <h1 class="fw-bold mb-1" style="font-size:1.6rem;letter-spacing:-0.5px">Edit Your Profile</h1>
+    <p class="text-muted" style="font-size:0.875rem">Update your name, email, or password below.</p>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="iq-alert iq-alert-{{ 'success' if cat=='success' else 'danger' if cat=='danger' else 'info' }} mb-3">
+        {{ msg }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="iq-card">
+    <!-- Current User Info -->
+    <div class="d-flex align-items-center gap-3 mb-4 pb-3" style="border-bottom:1px solid var(--glass-border)">
+      <div class="nav-avatar {% if user.role == 'driver' %}nav-avatar-driver{% else %}nav-avatar-tech{% endif %}"
+           style="width:52px;height:52px;font-size:1.2rem">
+        {{ user.name[0].upper() }}
+      </div>
+      <div>
+        <div class="fw-bold">{{ user.name }}</div>
+        <div class="text-muted" style="font-size:0.82rem">{{ user.email }}</div>
+        <span class="role-badge {% if user.role == 'driver' %}role-driver{% else %}role-tech{% endif %} mt-1">
+          {% if user.role == 'driver' %}🚗 Driver{% else %}🔧 Technician{% endif %}
+        </span>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('edit_profile') }}">
+
+      <div class="mb-3">
+        <label class="auth-label" for="epName">Full Name</label>
+        <input type="text" name="name" id="epName" class="auth-input"
+               value="{{ user.name }}" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="auth-label" for="epEmail">Email Address</label>
+        <input type="email" name="email" id="epEmail" class="auth-input"
+               value="{{ user.email }}" required>
+      </div>
+
+      <div style="border-top:1px solid var(--glass-border);padding-top:1.25rem;margin:1.5rem 0 1rem">
+        <div class="fw-bold mb-1" style="font-size:0.875rem">Change Password</div>
+        <p class="text-muted mb-3" style="font-size:0.8rem">Leave new password blank to keep your current password.</p>
+      </div>
+
+      <div class="mb-3">
+        <label class="auth-label" for="epCurrentPwd">Current Password <span style="color:var(--accent-red)">*</span></label>
+        <div style="position:relative">
+          <input type="password" name="current_password" id="epCurrentPwd" class="auth-input"
+                 placeholder="Required to save any changes" required style="padding-right:3rem">
+          <button type="button" onclick="togglePwd('epCurrentPwd','eye1')"
+                  style="position:absolute;right:0.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.95rem;padding:0">
+            <i id="eye1" class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="auth-label" for="epNewPwd">New Password</label>
+        <div style="position:relative">
+          <input type="password" name="new_password" id="epNewPwd" class="auth-input"
+                 placeholder="Min. 6 characters (optional)" minlength="6" style="padding-right:3rem">
+          <button type="button" onclick="togglePwd('epNewPwd','eye2')"
+                  style="position:absolute;right:0.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.95rem;padding:0">
+            <i id="eye2" class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3">
+        <button type="submit" class="btn-iq-primary" style="flex:1">
+          <i class="bi bi-check-circle-fill"></i> Save Changes
+        </button>
+        <a href="{{ url_for('dashboard') }}" class="btn-outline-iq" style="flex:1;text-decoration:none">
+          <i class="bi bi-x-circle"></i> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePwd(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const eye   = document.getElementById(eyeId);
+  input.type = input.type === 'password' ? 'text' : 'password';
+  eye.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endblock %}

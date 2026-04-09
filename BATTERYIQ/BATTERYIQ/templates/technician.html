@@ -1,0 +1,820 @@
+{% extends "base.html" %}
+{% block title %}Technician Dashboard — BatteryIQ{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<section class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <div class="section-badge"><i class="bi bi-tools me-1"></i> Technician Dashboard</div>
+        <h1 class="fw-bold mb-1" style="font-size:1.75rem;letter-spacing:-0.5px">Full Battery Diagnostics</h1>
+        <p class="text-muted mb-0" style="font-size:0.9rem">17-sensor analysis · Batch CSV · Fleet history · PDF export</p>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div style="text-align:right">
+          <div class="fw-bold" style="font-size:0.95rem">{{ current_user.name }}</div>
+          <span class="role-badge role-tech">🔧 Technician</span>
+        </div>
+        <div class="nav-avatar nav-avatar-tech" style="width:42px;height:42px;font-size:1rem">
+          {{ current_user.name[0].upper() }}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Tab Navigation ── -->
+<div class="container mt-4">
+  <div class="d-flex gap-2 mb-4 flex-wrap" id="techTabs">
+    <button class="tech-tab active" id="tab-manual" onclick="switchTab('manual')">
+      <i class="bi bi-cpu me-2"></i>Manual Diagnostics
+    </button>
+    <button class="tech-tab" id="tab-batch" onclick="switchTab('batch')">
+      <i class="bi bi-file-earmark-arrow-up me-2"></i>Batch CSV Upload
+    </button>
+    <button class="tech-tab" id="tab-fleet" onclick="switchTab('fleet')">
+      <i class="bi bi-list-check me-2"></i>Fleet History
+      {% if fleet_rows %}
+      <span class="ms-1" style="background:rgba(0,217,126,0.15);color:var(--accent-green);border-radius:99px;padding:0.1rem 0.5rem;font-size:0.72rem;font-weight:700">{{ fleet_rows|length }}</span>
+      {% endif %}
+    </button>
+  </div>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════╗
+     ║  TAB 1: MANUAL DIAGNOSTICS                    ║
+     ╚═══════════════════════════════════════════════╝ -->
+<div id="panel-manual" class="tab-panel">
+  <section class="pb-5">
+    <div class="container">
+      <div class="row g-4">
+
+        <!-- LEFT: Sensor Input Form -->
+        <div class="col-lg-5">
+          <div class="iq-card">
+            <h5 class="fw-bold mb-1" style="font-size:1rem">
+              <i class="bi bi-cpu me-2" style="color:var(--accent-blue)"></i>Sensor Readings
+            </h5>
+            <p class="text-muted mb-3" style="font-size:0.82rem">Enter the 17 sensor values from your diagnostic tool.</p>
+
+            <!-- Voltage Group -->
+            <div class="sensor-group mb-3">
+              <div class="sensor-group-title">
+                <i class="bi bi-lightning-fill text-warning"></i> Voltage Readings (V)
+              </div>
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="iq-label">Mean</label>
+                  <input type="number" class="iq-form-control" id="voltage_mean" value="3.55" step="0.001">
+                </div>
+                <div class="col-4">
+                  <label class="iq-label">Min</label>
+                  <input type="number" class="iq-form-control" id="voltage_min" value="2.85" step="0.001">
+                </div>
+                <div class="col-4">
+                  <label class="iq-label">Std Dev</label>
+                  <input type="number" class="iq-form-control" id="voltage_std" value="0.22" step="0.001">
+                </div>
+              </div>
+            </div>
+
+            <!-- Current Group -->
+            <div class="sensor-group mb-3">
+              <div class="sensor-group-title">
+                <i class="bi bi-activity text-danger"></i> Current Readings (A)
+              </div>
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="iq-label">Mean</label>
+                  <input type="number" class="iq-form-control" id="current_mean" value="-1.05" step="0.001">
+                </div>
+                <div class="col-4">
+                  <label class="iq-label">Std Dev</label>
+                  <input type="number" class="iq-form-control" id="current_std" value="0.18" step="0.001">
+                </div>
+                <div class="col-4">
+                  <label class="iq-label">Min</label>
+                  <input type="number" class="iq-form-control" id="current_min" value="-1.12" step="0.001">
+                </div>
+              </div>
+            </div>
+
+            <!-- Temperature Group -->
+            <div class="sensor-group mb-3">
+              <div class="sensor-group-title">
+                <i class="bi bi-thermometer text-info"></i> Temperature (°C)
+              </div>
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="iq-label">Mean</label>
+                  <input type="number" class="iq-form-control" id="temp_mean" value="28" step="0.1">
+                </div>
+                <div class="col-4">
+                  <label class="iq-label">Max</label>
+                  <input type="number" class="iq-form-control" id="temp_max" value="34" step="0.1">
+                </div>
+                <div class="col-4">
+                  <label class="iq-label">Std Dev</label>
+                  <input type="number" class="iq-form-control" id="temp_std" value="2.1" step="0.1">
+                </div>
+              </div>
+            </div>
+
+            <!-- Power & Energy -->
+            <div class="sensor-group mb-3">
+              <div class="sensor-group-title">
+                <i class="bi bi-battery-charging text-success"></i> Power & Energy
+              </div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <label class="iq-label">Power Mean (W)</label>
+                  <input type="number" class="iq-form-control" id="power_mean" value="3.73" step="0.01">
+                </div>
+                <div class="col-6">
+                  <label class="iq-label">Energy Delivered (Wh)</label>
+                  <input type="number" class="iq-form-control" id="energy_delivered" value="4.2" step="0.01">
+                </div>
+                <div class="col-6">
+                  <label class="iq-label">Voltage Load Mean (V)</label>
+                  <input type="number" class="iq-form-control" id="voltage_load_mean" value="3.10" step="0.001">
+                </div>
+                <div class="col-6">
+                  <label class="iq-label">Duration (sec)</label>
+                  <input type="number" class="iq-form-control" id="duration" value="3800" step="1">
+                </div>
+              </div>
+            </div>
+
+            <!-- Derived Features -->
+            <div class="sensor-group mb-4">
+              <div class="sensor-group-title">
+                <i class="bi bi-graph-up" style="color:var(--accent-blue)"></i> Derived Features
+              </div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <label class="iq-label">Voltage Range (V)</label>
+                  <input type="number" class="iq-form-control" id="voltage_range" value="0.70" step="0.001">
+                </div>
+                <div class="col-6">
+                  <label class="iq-label">Temp Rise (°C)</label>
+                  <input type="number" class="iq-form-control" id="temp_rise" value="6.0" step="0.1">
+                </div>
+                <div class="col-6">
+                  <label class="iq-label">Ambient Temp (°C)</label>
+                  <input type="number" class="iq-form-control" id="ambient_temperature" value="24" step="1">
+                </div>
+                <div class="col-6">
+                  <label class="iq-label">Cycle Number</label>
+                  <input type="number" class="iq-form-control" id="cycle_number" value="50" step="1">
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-iq-primary" id="analyzeBtn" onclick="analyzeTechnician()">
+              <i class="bi bi-cpu-fill"></i> Run Full Diagnostics
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div class="col-lg-7">
+
+          <!-- Placeholder -->
+          <div id="placeholder" class="iq-card h-100 d-flex flex-column align-items-center justify-content-center text-center py-5">
+            <div class="float-anim mb-4">
+              <i class="bi bi-tools" style="font-size:3rem;color:var(--accent-blue)"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Awaiting Sensor Input</h5>
+            <p class="text-muted small mb-4" style="max-width:280px">
+              Enter 17 sensor readings and click <strong style="color:var(--text-primary)">"Run Full Diagnostics"</strong> for a complete battery analysis.
+            </p>
+            <div class="d-flex gap-2 flex-wrap justify-content-center">
+              <span class="mini-stat-pill">17 Sensors</span>
+              <span class="mini-stat-pill">4 ML Models</span>
+              <span class="mini-stat-pill">PDF Export</span>
+            </div>
+          </div>
+
+          <!-- Loading -->
+          <div id="loadingState" class="iq-card d-none d-flex flex-column align-items-center justify-content-center text-center py-5">
+            <div style="position:relative;width:60px;height:60px;margin-bottom:1.5rem">
+              <div class="iq-spinner" style="width:60px;height:60px;border-width:3px;position:absolute;top:0;left:0;border-top-color:var(--accent-blue)"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                <i class="bi bi-cpu-fill" style="color:var(--accent-blue);font-size:1.2rem"></i>
+              </div>
+            </div>
+            <p class="fw-bold mb-1">Running Full Diagnostics...</p>
+            <small class="text-muted">Processing all 4 ML models simultaneously</small>
+          </div>
+
+          <!-- Results -->
+          <div id="results" class="d-none">
+
+            <!-- 4 Big Metrics -->
+            <div class="row g-3 mb-4">
+              <div class="col-6">
+                <div class="metric-card">
+                  <div class="metric-label"><i class="bi bi-heart-pulse me-1"></i>Health Score</div>
+                  <div class="metric-value mt-2" id="healthScore">--</div>
+                  <div class="metric-status" id="healthStatus">--</div>
+                  <div class="iq-progress"><div class="iq-progress-bar" id="healthBar" style="width:0%"></div></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="metric-card">
+                  <div class="metric-label"><i class="bi bi-exclamation-triangle me-1"></i>Stress Level</div>
+                  <div class="metric-value mt-2" id="stressLabel">--</div>
+                  <div class="metric-status small" id="stressMessage">--</div>
+                  <div class="iq-progress"><div class="iq-progress-bar" id="stressBar" style="width:0%"></div></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="metric-card">
+                  <div class="metric-label"><i class="bi bi-clock-history me-1"></i>Remaining Useful Life</div>
+                  <div class="metric-value mt-2" id="rulValue">--</div>
+                  <div class="metric-status" id="rulStatus">--</div>
+                  <div class="iq-progress"><div class="iq-progress-bar" id="rulBar" style="width:0%"></div></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="metric-card">
+                  <div class="metric-label"><i class="bi bi-lightning-charge me-1"></i>Efficiency Score</div>
+                  <div class="metric-value mt-2" id="effScore">--</div>
+                  <div class="metric-status" id="effStatus">--</div>
+                  <div class="iq-progress"><div class="iq-progress-bar" id="effBar" style="width:0%"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sensor Analysis Table -->
+            <div class="iq-card mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-table me-2" style="color:var(--accent-blue)"></i>Sensor Analysis</h6>
+                <a id="exportPdfLink" href="/export_pdf" class="btn-outline-iq" style="padding:0.4rem 0.9rem;font-size:0.8rem;color:var(--accent-red);border-color:rgba(239,68,68,0.3);text-decoration:none">
+                  <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </a>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-dark table-sm table-borderless iq-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Parameter</th><th>Value</th><th>Status</th><th>Normal Range</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sensorTable"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Technical Recommendations -->
+            <div class="iq-card mb-3">
+              <h6 class="fw-bold mb-3"><i class="bi bi-clipboard-check me-2 text-success"></i>Technical Recommendations</h6>
+              <div id="techRecommendations"></div>
+            </div>
+
+            <button class="btn-outline-iq w-100" onclick="resetTech()">
+              <i class="bi bi-arrow-counterclockwise me-2"></i>Run Another Analysis
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════╗
+     ║  TAB 2: BATCH CSV UPLOAD                      ║
+     ╚═══════════════════════════════════════════════╝ -->
+<div id="panel-batch" class="tab-panel d-none">
+  <section class="pb-5">
+    <div class="container">
+      <div class="row g-4">
+
+        <!-- Upload Form -->
+        <div class="col-lg-5">
+          <div class="iq-card">
+            <h5 class="fw-bold mb-1" style="font-size:1rem">
+              <i class="bi bi-file-earmark-arrow-up me-2 text-warning"></i>Batch CSV Upload
+            </h5>
+            <p class="text-muted mb-4" style="font-size:0.82rem">
+              Upload a CSV with 17 sensor columns to run predictions on multiple batteries at once.
+            </p>
+
+            <form method="POST" action="/upload_csv" enctype="multipart/form-data" id="csvForm">
+              <!-- Drop Zone -->
+              <div class="csv-dropzone mb-3" id="dropZone">
+                <input type="file" name="csv_file" accept=".csv" id="csvFileInput" required>
+                <i class="bi bi-file-earmark-spreadsheet" style="font-size:2.5rem;color:var(--text-muted);margin-bottom:0.75rem;display:block"></i>
+                <div class="fw-bold mb-1" style="font-size:0.9rem" id="dropZoneText">Drop CSV here or click to browse</div>
+                <small class="text-muted">Requires 17 sensor columns</small>
+              </div>
+
+              <!-- Progress -->
+              <div class="d-none mb-3" id="csvProgressWrap">
+                <div class="d-flex justify-content-between mb-1">
+                  <small class="text-muted" id="csvProgressText">Processing...</small>
+                  <small id="csvProgressPct" style="color:var(--accent-cyan);font-weight:700">0%</small>
+                </div>
+                <div style="height:6px;background:var(--border-color);border-radius:99px;overflow:hidden">
+                  <div class="iq-progress-bar" id="csvProgressBar" style="width:0%;background:var(--accent-cyan)"></div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn-iq-primary flex-grow-1">
+                  <i class="bi bi-play-circle-fill"></i> Run Batch Analysis
+                </button>
+                <a href="/download_sample_csv" class="btn-outline-iq px-3" title="Download sample CSV template" style="flex-shrink:0">
+                  <i class="bi bi-download"></i>
+                </a>
+              </div>
+              <small class="text-muted d-block mt-2" style="font-size:0.78rem">
+                💡 Single-row CSV auto-fills the manual form. Multi-row CSV runs batch predictions.
+              </small>
+            </form>
+          </div>
+
+          <!-- Column Reference Card -->
+          <div class="iq-card mt-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-info"></i>Required CSV Columns</h6>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text-secondary);line-height:2">
+              voltage_mean, voltage_min, voltage_std<br>
+              current_mean, current_std, current_min<br>
+              temp_mean, temp_max, temp_std<br>
+              duration, voltage_load_mean<br>
+              voltage_range, temp_rise<br>
+              power_mean, energy_delivered<br>
+              ambient_temperature, cycle_number
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="col-lg-7">
+          {% if csv_results is defined and csv_results %}
+          <div class="iq-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0"><i class="bi bi-table me-2 text-success"></i>Batch Results</h6>
+              <span class="badge-iq-success">{{ csv_saved }} / {{ total_rows }} Saved</span>
+            </div>
+
+            <!-- Summary row -->
+            <div class="row g-2 mb-4">
+              <div class="col-4">
+                <div class="history-stat">
+                  <div class="history-stat-val text-success">{{ total_rows }}</div>
+                  <div class="history-stat-lbl">Total Rows</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="history-stat">
+                  <div class="history-stat-val" style="color:var(--accent-blue)">{{ csv_avg_health }}</div>
+                  <div class="history-stat-lbl">Avg Health</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="history-stat">
+                  <div class="history-stat-val text-warning">
+                    {% if csv_highest_risk %}#{{ csv_highest_risk.row }}{% else %}N/A{% endif %}
+                  </div>
+                  <div class="history-stat-lbl">Highest Risk</div>
+                </div>
+              </div>
+            </div>
+
+            {% if csv_errors %}
+            <div class="iq-alert iq-alert-warning mb-3" style="font-size:0.82rem">
+              <strong>⚠️ Some rows had errors:</strong>
+              {% for e in csv_errors %}<div>{{ e }}</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="table-responsive">
+              <table class="table table-dark table-sm table-borderless iq-table">
+                <thead>
+                  <tr><th>Row</th><th>Stress</th><th>Health</th><th>RUL</th><th>Efficiency</th><th>Export</th></tr>
+                </thead>
+                <tbody>
+                  {% for r in csv_results %}
+                  <tr>
+                    <td class="text-muted">#{{ r.row }}</td>
+                    <td>
+                      <span class="{% if r.stress=='High' %}badge-iq-danger{% elif r.stress=='Medium' %}badge-iq-warning{% else %}badge-iq-success{% endif %}">
+                        {{ r.stress }}
+                      </span>
+                    </td>
+                    <td><span class="text-{{ r.health_color }}">{{ r.health }}/100</span></td>
+                    <td><span class="text-{{ r.rul_color }}">{{ r.rul }} cyc</span></td>
+                    <td><span class="text-{{ r.efficiency_color }}">{{ r.efficiency }}%</span></td>
+                    <td>
+                      {% if r.prediction_id %}
+                      <a href="/export_pdf/{{ r.prediction_id }}" style="color:var(--accent-red);text-decoration:none;font-size:0.85rem">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                      </a>
+                      {% else %}—{% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <small class="text-muted">All predictions saved. <a href="/history" style="color:var(--accent-green)">View full history →</a></small>
+          </div>
+
+          {% elif csv_errors is defined and csv_errors %}
+          <div class="iq-card">
+            <div class="iq-alert iq-alert-danger">
+              <strong>❌ Upload failed:</strong>
+              {% for e in csv_errors %}<div class="small">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+
+          {% else %}
+          <div class="iq-card h-100 d-flex flex-column align-items-center justify-content-center text-center py-5">
+            <i class="bi bi-file-earmark-spreadsheet float-anim mb-3" style="font-size:3rem;color:var(--text-muted)"></i>
+            <h6 class="fw-bold mb-1">No Batch Results Yet</h6>
+            <p class="text-muted small mb-0">Upload a CSV file to see batch prediction results here.</p>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════╗
+     ║  TAB 3: FLEET HISTORY                         ║
+     ╚═══════════════════════════════════════════════╝ -->
+<div id="panel-fleet" class="tab-panel d-none">
+  <section class="pb-5">
+    <div class="container">
+      {% if fleet_rows %}
+
+      <!-- Fleet Stats Summary -->
+      <div class="row g-3 mb-4">
+        {% set avg_h = (fleet_rows | map(attribute='health') | sum) / fleet_rows|length %}
+        {% set avg_r = (fleet_rows | map(attribute='rul') | sum) / fleet_rows|length %}
+        {% set high_count = fleet_rows | selectattr('stress', 'equalto', 'High') | list | length %}
+        <div class="col-6 col-md-3">
+          <div class="history-stat">
+            <div class="history-stat-val text-success">{{ fleet_rows|length }}</div>
+            <div class="history-stat-lbl">Total Diagnoses</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="history-stat">
+            <div class="history-stat-val" style="color:var(--accent-blue)">{{ "%.1f"|format(avg_h) }}</div>
+            <div class="history-stat-lbl">Avg Health Score</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="history-stat">
+            <div class="history-stat-val text-warning">{{ avg_r|int }}</div>
+            <div class="history-stat-lbl">Avg RUL (cycles)</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="history-stat">
+            <div class="history-stat-val text-danger">{{ high_count }}</div>
+            <div class="history-stat-lbl">High Stress</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="iq-card">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0"><i class="bi bi-list-check me-2 text-info"></i>Fleet Diagnosis History</h5>
+          <a href="/export_pdf" class="btn-outline-iq" style="padding:0.4rem 0.9rem;font-size:0.8rem;color:var(--accent-red);border-color:rgba(239,68,68,0.3);text-decoration:none">
+            <i class="bi bi-file-earmark-pdf me-1"></i>Export All
+          </a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-dark table-sm table-borderless iq-table mb-0">
+            <thead>
+              <tr><th>#</th><th>Date & Time</th><th>Method</th><th>Stress</th><th>Health</th><th>RUL</th><th>Efficiency</th><th>PDF</th></tr>
+            </thead>
+            <tbody>
+              {% for r in fleet_rows %}
+              <tr>
+                <td class="text-muted">{{ r.idx }}</td>
+                <td style="font-size:0.82rem">{{ r.timestamp }}</td>
+                <td>
+                  <span class="{% if r.source == 'csv' %}badge-iq-success{% else %}badge-iq-warning{% endif %}" style="font-size:0.7rem">
+                    {{ r.source }}
+                  </span>
+                </td>
+                <td>
+                  <span class="{% if r.stress=='High' %}badge-iq-danger{% elif r.stress=='Medium' %}badge-iq-warning{% else %}badge-iq-success{% endif %}">
+                    {{ r.stress }}
+                  </span>
+                </td>
+                <td class="fw-bold {% if r.health >= 85 %}text-success{% elif r.health >= 70 %}text-primary{% elif r.health >= 55 %}text-warning{% else %}text-danger{% endif %}">
+                  {{ "%.1f"|format(r.health) }}/100
+                </td>
+                <td class="{% if r.rul >= 100 %}text-success{% elif r.rul >= 50 %}text-primary{% elif r.rul >= 20 %}text-warning{% else %}text-danger{% endif %}">
+                  {{ r.rul }} cyc
+                </td>
+                <td>{{ "%.1f"|format(r.efficiency) }}%</td>
+                <td>
+                  <a href="/export_pdf/{{ r.id }}" style="color:var(--accent-red);text-decoration:none">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {% else %}
+      <div class="iq-card text-center py-5">
+        <i class="bi bi-inbox float-anim mb-3" style="font-size:3rem;color:var(--text-muted);display:block"></i>
+        <h5 class="fw-bold mb-2">No Records Yet</h5>
+        <p class="text-muted mb-3">Run your first manual diagnostic or upload a CSV to see fleet history here.</p>
+        <button onclick="switchTab('manual')" class="btn-iq-primary" style="width:auto;padding:0.7rem 2rem">
+          <i class="bi bi-cpu-fill"></i> Start First Diagnosis
+        </button>
+      </div>
+      {% endif %}
+
+    </div>
+  </section>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+.tech-tab {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.tech-tab:hover { background: rgba(255,255,255,0.06); color: white; border-color: rgba(255,255,255,0.1); }
+.tech-tab.active {
+  background: rgba(59,130,246,0.1);
+  border-color: rgba(59,130,246,0.3);
+  color: var(--accent-blue);
+}
+</style>
+<script>
+// ── Tab Switching ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('d-none'));
+  document.querySelectorAll('.tech-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.remove('d-none');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// Auto-open batch tab if CSV results or errors are present
+window.addEventListener('DOMContentLoaded', () => {
+  {% if (csv_results is defined and csv_results) or (csv_errors is defined and csv_errors) %}
+  switchTab('batch');
+  {% endif %}
+});
+
+// ── Color Maps ──
+const colorMap = {
+  success: { text: 'var(--accent-green)',  bar: '#00d97e' },
+  primary: { text: 'var(--accent-blue)',   bar: '#3b82f6' },
+  warning: { text: 'var(--accent-yellow)', bar: '#f59e0b' },
+  danger:  { text: 'var(--accent-red)',    bar: '#ef4444' },
+};
+
+function applyColor(id, color) {
+  const el = document.getElementById(id);
+  if (el) el.style.color = colorMap[color]?.text || colorMap.success.text;
+}
+
+function applyBar(id, color, pct) {
+  const bar = document.getElementById(id);
+  if (bar) {
+    bar.style.background = colorMap[color]?.bar || colorMap.success.bar;
+    bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = pct + '%'; }, 120);
+  }
+}
+
+function animateCounter(el, target, suffix = '') {
+  let current = 0;
+  const step = target / 60;
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = (Number.isInteger(target) ? Math.round(current) : current.toFixed(1)) + suffix;
+    if (current >= target) clearInterval(timer);
+  }, 16);
+}
+
+// ── Sensor Table Builder ──
+function buildSensorTable(inputs) {
+  const ranges = {
+    voltage_mean:        { min: 3.0,   max: 4.5,   unit: 'V',   label: 'Voltage Mean' },
+    voltage_min:         { min: 2.0,   max: 3.5,   unit: 'V',   label: 'Voltage Min' },
+    voltage_std:         { min: 0.05,  max: 0.6,   unit: '',    label: 'Voltage Std Dev' },
+    current_mean:        { min: -4.0,  max: -0.1,  unit: 'A',   label: 'Current Mean' },
+    current_std:         { min: 0.05,  max: 0.8,   unit: '',    label: 'Current Std Dev' },
+    current_min:         { min: -5.0,  max: -0.2,  unit: 'A',   label: 'Current Min' },
+    temp_mean:           { min: 5,     max: 45,    unit: '°C',  label: 'Temperature Mean' },
+    temp_max:            { min: 5,     max: 55,    unit: '°C',  label: 'Temperature Max' },
+    temp_std:            { min: 0.3,   max: 8,     unit: '',    label: 'Temperature Std' },
+    duration:            { min: 500,   max: 7000,  unit: 's',   label: 'Session Duration' },
+    voltage_load_mean:   { min: 2.0,   max: 4.2,   unit: 'V',   label: 'Voltage Load Mean' },
+    voltage_range:       { min: 0.2,   max: 1.5,   unit: 'V',   label: 'Voltage Range' },
+    temp_rise:           { min: 1,     max: 25,    unit: '°C',  label: 'Temperature Rise' },
+    power_mean:          { min: 1,     max: 12,    unit: 'W',   label: 'Power Mean' },
+    energy_delivered:    { min: 1,     max: 10,    unit: 'Wh',  label: 'Energy Delivered' },
+    ambient_temperature: { min: -10,   max: 45,    unit: '°C',  label: 'Ambient Temperature' },
+    cycle_number:        { min: 1,     max: 200,   unit: '',    label: 'Cycle Number' }
+  };
+
+  let rows = '';
+  Object.entries(ranges).forEach(([key, r]) => {
+    const val = parseFloat(inputs[key] || 0);
+    const inRange = val >= r.min && val <= r.max;
+    rows += `<tr>
+      <td class="text-muted" style="font-size:0.82rem">${r.label}</td>
+      <td class="fw-bold" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem">${val} ${r.unit}</td>
+      <td>${inRange
+        ? '<span class="badge-iq-success">✓ Normal</span>'
+        : '<span class="badge-iq-danger">⚠ Check</span>'}</td>
+      <td class="text-muted" style="font-size:0.78rem">${r.min}–${r.max} ${r.unit}</td>
+    </tr>`;
+  });
+  document.getElementById('sensorTable').innerHTML = rows;
+}
+
+function buildRecommendations(data, inputs) {
+  const recs = [];
+  if (data.stress_label === 'High')
+    recs.push({ color: 'danger',  text: '🚨 HIGH STRESS detected. Inspect cooling system and reduce discharge rate immediately.' });
+  if (data.health_score < 70)
+    recs.push({ color: 'danger',  text: '❤️ Health Score below 70%. Battery replacement is now recommended.' });
+  if (data.RUL < 20)
+    recs.push({ color: 'warning', text: `⏳ Only ${data.RUL} cycles remaining. Plan for battery replacement immediately.` });
+  if (parseFloat(inputs.temp_max) > 50)
+    recs.push({ color: 'warning', text: '🌡️ Max temperature exceeds 50°C. Check thermal management system.' });
+  if (data.efficiency_score < 25)
+    recs.push({ color: 'warning', text: '⚡ Very low efficiency. Check for elevated internal resistance.' });
+  if (data.stress_label === 'Low' && data.health_score > 85)
+    recs.push({ color: 'success', text: '✅ Battery in excellent condition. No immediate action required.' });
+  if (data.RUL > 100)
+    recs.push({ color: 'success', text: `🎯 Good remaining life. Schedule next checkup at cycle ${parseInt(inputs.cycle_number) + 50}.` });
+  if (recs.length === 0)
+    recs.push({ color: 'info', text: 'ℹ️ All readings within acceptable parameters. Continue regular monitoring schedule.' });
+
+  document.getElementById('techRecommendations').innerHTML = recs.map(r =>
+    `<div class="iq-alert iq-alert-${r.color} mb-2" style="font-size:0.875rem">${r.text}</div>`
+  ).join('');
+}
+
+// ── Analyze Technician ──
+async function analyzeTechnician() {
+  document.getElementById('placeholder').classList.add('d-none');
+  document.getElementById('results').classList.add('d-none');
+  document.getElementById('loadingState').classList.remove('d-none');
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="iq-spinner me-2"></span> Running...';
+
+  const fields = [
+    'voltage_mean','voltage_min','voltage_std',
+    'current_mean','current_std','current_min',
+    'temp_mean','temp_max','temp_std',
+    'duration','voltage_load_mean',
+    'voltage_range','temp_rise',
+    'power_mean','energy_delivered',
+    'ambient_temperature','cycle_number'
+  ];
+
+  const payload = {};
+  fields.forEach(f => { payload[f] = parseFloat(document.getElementById(f)?.value || 0); });
+
+  try {
+    const response = await fetch('/api/predict/technician', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+
+    const hc = data.health_info.color;
+    const healthEl = document.getElementById('healthScore');
+    document.getElementById('healthStatus').textContent = data.health_info.status;
+    applyColor('healthScore', hc); applyColor('healthStatus', hc);
+    applyBar('healthBar', hc, data.health_score);
+    animateCounter(healthEl, parseFloat(data.health_score), '/100');
+
+    const stressWidth = { Low: 20, Medium: 55, High: 92 };
+    document.getElementById('stressLabel').textContent   = data.stress_label;
+    document.getElementById('stressMessage').textContent = data.stress_info.message;
+    applyColor('stressLabel', data.stress_info.color);
+    applyBar('stressBar', data.stress_info.color, stressWidth[data.stress_label] || 50);
+
+    const rulEl = document.getElementById('rulValue');
+    document.getElementById('rulStatus').textContent = data.rul_info.status;
+    applyColor('rulValue', data.rul_info.color); applyColor('rulStatus', data.rul_info.color);
+    applyBar('rulBar', data.rul_info.color, Math.min(100, (data.RUL / 200) * 100));
+    animateCounter(rulEl, parseInt(data.RUL), ' cycles');
+
+    const effEl = document.getElementById('effScore');
+    document.getElementById('effStatus').textContent = data.efficiency_info.status;
+    applyColor('effScore', data.efficiency_info.color); applyColor('effStatus', data.efficiency_info.color);
+    applyBar('effBar', data.efficiency_info.color, data.efficiency_score);
+    animateCounter(effEl, parseFloat(data.efficiency_score), '/100');
+
+    buildSensorTable(payload);
+    buildRecommendations(data, payload);
+
+    document.getElementById('loadingState').classList.add('d-none');
+    document.getElementById('results').classList.remove('d-none');
+
+  } catch (err) {
+    document.getElementById('loadingState').classList.add('d-none');
+    document.getElementById('placeholder').classList.remove('d-none');
+    const flash = document.createElement('div');
+    flash.className = 'iq-alert iq-alert-danger mb-3';
+    flash.textContent = 'Error: ' + err.message;
+    document.getElementById('placeholder').prepend(flash);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-cpu-fill"></i> Run Full Diagnostics';
+}
+
+function resetTech() {
+  document.getElementById('results').classList.add('d-none');
+  document.getElementById('placeholder').classList.remove('d-none');
+}
+
+// ── CSV Auto-fill & Progress ──
+function parseCsvLine(line) { return line.split(',').map(v => v.trim()); }
+
+function maybeAutofillFromSingleRowCsv(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.split(/\r?\n/).filter(Boolean);
+    if (lines.length !== 2) return;
+    const headers = parseCsvLine(lines[0]);
+    const values  = parseCsvLine(lines[1]);
+    if (headers.length !== values.length) return;
+    const map = {};
+    headers.forEach((h, i) => { map[h] = values[i]; });
+    const fields = ['voltage_mean','voltage_min','voltage_std','current_mean','current_std','current_min',
+      'temp_mean','temp_max','temp_std','duration','voltage_load_mean','voltage_range',
+      'temp_rise','power_mean','energy_delivered','ambient_temperature','cycle_number'];
+    if (!fields.every(f => map[f] !== undefined)) return;
+    fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = map[f]; });
+    switchTab('manual');
+  };
+  reader.readAsText(file);
+}
+
+function startCsvProgress() {
+  const wrap = document.getElementById('csvProgressWrap');
+  const bar  = document.getElementById('csvProgressBar');
+  const pct  = document.getElementById('csvProgressPct');
+  wrap.classList.remove('d-none');
+  let p = 0;
+  const timer = setInterval(() => {
+    p = Math.min(92, p + 7);
+    bar.style.width = p + '%';
+    pct.textContent = p + '%';
+  }, 200);
+  window.addEventListener('beforeunload', () => clearInterval(timer));
+}
+
+// Drop zone label update
+const csvInput = document.getElementById('csvFileInput');
+if (csvInput) {
+  csvInput.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) {
+      document.getElementById('dropZoneText').textContent = f.name;
+      maybeAutofillFromSingleRowCsv(f);
+    }
+  });
+}
+
+const csvForm = document.getElementById('csvForm');
+if (csvForm) csvForm.addEventListener('submit', startCsvProgress);
+
+// Navbar scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endblock %}

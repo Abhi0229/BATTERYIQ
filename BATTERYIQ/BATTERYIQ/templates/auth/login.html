@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Sign In — BatteryIQ{% endblock %}
+{% block content %}
+<div class="auth-page" style="padding-top:72px;min-height:100vh">
+  <div class="container-fluid h-100">
+    <div class="row g-0" style="min-height:calc(100vh - 72px)">
+
+      <!-- ── LEFT PANEL ── -->
+      <div class="col-lg-5 d-none d-lg-flex auth-left">
+        <div style="position:relative;z-index:1;text-align:center">
+          <!-- Logo -->
+          <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+            <div class="brand-icon" style="width:52px;height:52px;font-size:1.4rem">
+              <i class="bi bi-battery-charging"></i>
+            </div>
+            <div style="text-align:left">
+              <div class="brand-name" style="font-size:1.5rem">BatteryIQ</div>
+              <div class="brand-tag">AI Energy Optimizer</div>
+            </div>
+          </div>
+
+          <h2 class="fw-bold mb-2" style="font-size:1.8rem;letter-spacing:-0.5px">
+            Welcome back
+          </h2>
+          <p class="text-muted mb-5" style="font-size:0.95rem;max-width:280px;margin:0 auto 2rem">
+            Your battery intelligence dashboard is waiting.
+          </p>
+
+          <!-- Mini battery metrics demo -->
+          <div style="max-width:300px;margin:0 auto">
+            <div class="iq-alert iq-alert-success mb-3 text-start" style="font-size:0.85rem">
+              <strong>🟢 Battery B0005</strong> — Health: 94/100 · Stress: Low
+            </div>
+            <div class="iq-alert iq-alert-warning mb-3 text-start" style="font-size:0.85rem">
+              <strong>🟡 Battery B0006</strong> — Health: 78/100 · Stress: Medium
+            </div>
+            <div class="iq-alert iq-alert-danger text-start" style="font-size:0.85rem">
+              <strong>🔴 Battery B0007</strong> — Health: 62/100 · RUL: 8 cycles
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="d-flex justify-content-center gap-4 mt-5">
+            <div class="text-center">
+              <div class="hero-stat-value">97%</div>
+              <div class="hero-stat-label">Accuracy</div>
+            </div>
+            <div class="text-center">
+              <div class="hero-stat-value">4</div>
+              <div class="hero-stat-label">AI Models</div>
+            </div>
+            <div class="text-center">
+              <div class="hero-stat-value">NASA</div>
+              <div class="hero-stat-label">Dataset</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT PANEL (Form) ── -->
+      <div class="col-lg-7 auth-right">
+        <div class="auth-form-wrap">
+          <!-- Mobile logo -->
+          <div class="d-flex d-lg-none align-items-center gap-2 mb-4">
+            <div class="brand-icon"><i class="bi bi-battery-charging"></i></div>
+            <span class="brand-name">BatteryIQ</span>
+          </div>
+
+          <h1 class="fw-bold mb-1" style="font-size:1.8rem;letter-spacing:-0.5px">Sign in</h1>
+          <p class="text-muted mb-4">Access your battery monitoring dashboard</p>
+
+          <!-- Flash messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+              <div class="iq-alert iq-alert-{{ 'success' if cat=='success' else 'danger' if cat=='danger' else 'info' }} mb-3">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          {% endwith %}
+
+          <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+            <div class="mb-4">
+              <label class="auth-label" for="loginEmail">Email Address</label>
+              <input type="email" name="email" id="loginEmail"
+                     class="auth-input" placeholder="you@example.com" required autocomplete="email">
+            </div>
+
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="auth-label mb-0" for="loginPassword">Password</label>
+              </div>
+              <div style="position:relative">
+                <input type="password" name="password" id="loginPassword"
+                       class="auth-input" placeholder="••••••••" required autocomplete="current-password"
+                       style="padding-right:3rem">
+                <button type="button" onclick="togglePwd('loginPassword','eyeLogin')"
+                        style="position:absolute;right:0.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0">
+                  <i id="eyeLogin" class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-iq-primary mb-3">
+              <i class="bi bi-box-arrow-in-right"></i> Sign In to BatteryIQ
+            </button>
+          </form>
+
+          <div style="border-top:1px solid var(--glass-border);padding-top:1.25rem;margin-top:0.5rem">
+            <p class="text-center mb-0" style="font-size:0.9rem;color:var(--text-secondary)">
+              Don't have an account?
+              <a href="{{ url_for('signup') }}" style="color:var(--accent-green);font-weight:600;text-decoration:none">
+                Create one free →
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePwd(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const eye = document.getElementById(eyeId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.className = 'bi bi-eye-slash';
+  } else {
+    input.type = 'password';
+    eye.className = 'bi bi-eye';
+  }
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endblock %}

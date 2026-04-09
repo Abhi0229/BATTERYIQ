@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+{% block title %}Driver Dashboard — BatteryIQ{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<section class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <div class="section-badge"><i class="bi bi-ev-front me-1"></i> Driver Dashboard</div>
+        <h1 class="fw-bold mb-1" style="font-size:1.75rem;letter-spacing:-0.5px">Battery Health Check</h1>
+        <p class="text-muted mb-0" style="font-size:0.9rem">Instant AI-powered battery analysis — no technical knowledge needed.</p>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div style="text-align:right">
+          <div class="fw-bold" style="font-size:0.95rem">{{ current_user.name }}</div>
+          <div class="text-muted" style="font-size:0.8rem">{{ current_user.email }}</div>
+        </div>
+        <div class="nav-avatar nav-avatar-driver" style="width:42px;height:42px;font-size:1rem">
+          {{ current_user.name[0].upper() }}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Quick Stats Row ── -->
+<div class="container mt-4">
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card-sm">
+        <div class="text-muted" style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem">
+          <i class="bi bi-ev-front me-1"></i> Role
+        </div>
+        <div class="fw-bold" style="font-size:0.95rem;color:var(--accent-green)">EV Driver</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card-sm">
+        <div class="text-muted" style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem">
+          <i class="bi bi-cpu me-1"></i> Models Active
+        </div>
+        <div class="fw-bold" style="font-size:0.95rem;color:var(--accent-blue)">4 AI Models</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card-sm">
+        <div class="text-muted" style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem">
+          <i class="bi bi-database me-1"></i> Dataset
+        </div>
+        <div class="fw-bold" style="font-size:0.95rem;color:var(--accent-cyan)">NASA B0005–B0049</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card-sm">
+        <div class="text-muted" style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem">
+          <i class="bi bi-clock-history me-1"></i> History
+        </div>
+        <a href="/history" style="color:var(--accent-green);font-weight:700;font-size:0.95rem;text-decoration:none">View Records →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Content ── -->
+<section class="pb-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <!-- ── LEFT: Input Form ── -->
+      <div class="col-lg-5">
+        <div class="iq-card mb-4">
+          <h5 class="fw-bold mb-1" style="font-size:1rem">
+            <i class="bi bi-sliders me-2 text-success"></i> Battery Parameters
+          </h5>
+          <p class="text-muted mb-4" style="font-size:0.85rem">
+            Adjust sliders to match your battery status, then click Analyze.
+          </p>
+
+          <!-- Battery % with visual indicator -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="iq-label mb-0">🔋 Current Battery Level</label>
+              <span class="slider-val" id="battery_pct_val">80%</span>
+            </div>
+            <input type="range" class="form-range w-100" id="battery_pct"
+                   min="10" max="100" value="80" step="1"
+                   oninput="updateSlider('battery_pct','battery_pct_val','%');updateBatteryViz()">
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted" style="font-size:0.72rem">10% · Critical</small>
+              <small class="text-muted" style="font-size:0.72rem">100% · Full</small>
+            </div>
+          </div>
+
+          <!-- Temperature -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="iq-label mb-0">🌡️ Battery Temperature</label>
+              <span class="slider-val" id="temperature_val">30°C</span>
+            </div>
+            <input type="range" class="form-range w-100" id="temperature"
+                   min="5" max="65" value="30" step="1"
+                   oninput="updateSlider('temperature','temperature_val','°C')">
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted" style="font-size:0.72rem">5°C · Cold</small>
+              <small class="text-muted" style="font-size:0.72rem">65°C · Overheating</small>
+            </div>
+          </div>
+
+          <!-- Cycle Count -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="iq-label mb-0">🔄 Total Charge Cycles</label>
+              <span class="slider-val" id="cycle_count_val">50 cycles</span>
+            </div>
+            <input type="range" class="form-range w-100" id="cycle_count"
+                   min="1" max="200" value="50" step="1"
+                   oninput="updateSlider('cycle_count','cycle_count_val',' cycles')">
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted" style="font-size:0.72rem">1 · Brand New</small>
+              <small class="text-muted" style="font-size:0.72rem">200 · Heavily Aged</small>
+            </div>
+            <small class="text-muted mt-1 d-block" style="font-size:0.75rem">
+              💡 Approx. 1 cycle per day of regular driving
+            </small>
+          </div>
+
+          <!-- Trip Duration -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="iq-label mb-0">⏱️ Last Trip Duration</label>
+              <span class="slider-val" id="trip_duration_val">45 min</span>
+            </div>
+            <input type="range" class="form-range w-100" id="trip_duration"
+                   min="10" max="120" value="45" step="5"
+                   oninput="updateSlider('trip_duration','trip_duration_val',' min')">
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted" style="font-size:0.72rem">10 min · Short</small>
+              <small class="text-muted" style="font-size:0.72rem">120 min · Long</small>
+            </div>
+          </div>
+
+          <button class="btn-iq-primary" id="analyzeBtn" onclick="analyzeDriver()">
+            <i class="bi bi-cpu-fill"></i> Analyze My Battery
+          </button>
+        </div>
+
+        <!-- Battery Visual + Quick Guide -->
+        <div class="iq-card">
+          <div class="row g-3 align-items-center">
+            <!-- Battery visual -->
+            <div class="col-4 text-center">
+              <div class="battery-cap mx-auto" style="width:24px;height:8px;background:var(--border-color);border-radius:3px 3px 0 0;margin-bottom:-1px"></div>
+              <div class="battery-body mx-auto" style="width:48px;height:88px;border:2px solid var(--border-color);border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.02);position:relative">
+                <div id="batteryFill" class="battery-fill" style="height:80%;background:var(--accent-green)"></div>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                  <i class="bi bi-lightning-charge-fill" style="color:rgba(255,255,255,0.7);font-size:1rem"></i>
+                </div>
+              </div>
+              <div id="batteryPct" class="fw-bold mt-1" style="font-size:0.8rem;color:var(--accent-green)">80%</div>
+            </div>
+            <!-- Quick guide -->
+            <div class="col-8">
+              <div class="fw-bold mb-2" style="font-size:0.85rem"><i class="bi bi-info-circle me-1 text-info"></i>Quick Guide</div>
+              <div class="quick-tip"><span class="qt-icon">🔋</span> Set your current battery %</div>
+              <div class="quick-tip"><span class="qt-icon">🌡️</span> Enter battery temperature</div>
+              <div class="quick-tip"><span class="qt-icon">🔄</span> Estimate total charge cycles</div>
+              <div class="quick-tip"><span class="qt-icon">⏱️</span> Enter your last trip duration</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EV Map Link -->
+        <a href="{{ url_for('map_view') }}" class="btn-outline-iq w-100 mt-3" style="text-decoration:none;padding:0.7rem 1.5rem">
+          <i class="bi bi-geo-alt-fill text-success"></i> Find Nearby EV Charging Stations
+        </a>
+      </div>
+
+      <!-- ── RIGHT: Results ── -->
+      <div class="col-lg-7">
+
+        <!-- Placeholder -->
+        <div id="placeholder" class="iq-card h-100 d-flex flex-column align-items-center justify-content-center text-center py-5">
+          <div class="float-anim mb-4">
+            <i class="bi bi-battery-charging" style="font-size:3.5rem;color:var(--accent-green)"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Ready to Analyze</h5>
+          <p class="text-muted small mb-4" style="max-width:260px">
+            Adjust the sliders and click <strong style="color:var(--text-primary)">"Analyze My Battery"</strong>
+            to get your instant health report.
+          </p>
+          <div class="d-flex gap-2 flex-wrap justify-content-center">
+            <span class="mini-stat-pill">97% Accuracy</span>
+            <span class="mini-stat-pill">4 AI Models</span>
+            <span class="mini-stat-pill">Instant Results</span>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingState" class="iq-card d-none d-flex flex-column align-items-center justify-content-center text-center py-5">
+          <div style="position:relative;width:60px;height:60px;margin-bottom:1.5rem">
+            <div class="iq-spinner" style="width:60px;height:60px;border-width:3px;position:absolute;top:0;left:0;border-top-color:var(--accent-green)"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <i class="bi bi-cpu-fill" style="color:var(--accent-green);font-size:1.25rem"></i>
+            </div>
+          </div>
+          <p class="fw-bold mb-1">Running AI Analysis...</p>
+          <small class="text-muted">Checking 4 models simultaneously</small>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="d-none">
+
+          <!-- Summary Alert -->
+          <div id="summaryAlert" class="iq-alert mb-4">
+            <div class="d-flex align-items-start gap-3">
+              <div id="summaryIcon" style="font-size:2rem;line-height:1;flex-shrink:0"></div>
+              <div>
+                <h5 id="summaryTitle" class="fw-bold mb-1" style="font-size:1rem"></h5>
+                <p id="summaryMessage" class="mb-0 small"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Metric Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <div class="metric-card">
+                <div class="metric-label"><i class="bi bi-heart-pulse me-1"></i>Health Score</div>
+                <div class="metric-value mt-2" id="healthScore">--</div>
+                <div class="metric-status" id="healthStatus">--</div>
+                <div class="iq-progress"><div class="iq-progress-bar" id="healthBar" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="metric-card">
+                <div class="metric-label"><i class="bi bi-exclamation-triangle me-1"></i>Stress Level</div>
+                <div class="metric-value mt-2" id="stressLabel">--</div>
+                <div class="metric-status" id="stressMessage">--</div>
+                <div class="iq-progress"><div class="iq-progress-bar" id="stressBar" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="metric-card">
+                <div class="metric-label"><i class="bi bi-clock-history me-1"></i>Cycles Remaining (RUL)</div>
+                <div class="metric-value mt-2" id="rulValue">--</div>
+                <div class="metric-status" id="rulStatus">--</div>
+                <div class="iq-progress"><div class="iq-progress-bar" id="rulBar" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="metric-card">
+                <div class="metric-label"><i class="bi bi-lightning-charge me-1"></i>Efficiency Score</div>
+                <div class="metric-value mt-2" id="effScore">--</div>
+                <div class="metric-status" id="effStatus">--</div>
+                <div class="iq-progress"><div class="iq-progress-bar" id="effBar" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Smart Tips + Action Buttons -->
+          <div class="iq-card mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h6 class="fw-bold mb-0">
+                <i class="bi bi-lightbulb-fill me-2 text-warning"></i>Smart Tips
+              </h6>
+              <div class="d-flex gap-2">
+                <a href="/history" class="btn-outline-iq" style="padding:0.4rem 0.9rem;font-size:0.8rem">
+                  <i class="bi bi-clock-history"></i> History
+                </a>
+                <a href="/export_pdf" class="btn-outline-iq" style="padding:0.4rem 0.9rem;font-size:0.8rem;color:var(--accent-red);border-color:rgba(239,68,68,0.3)">
+                  <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </a>
+              </div>
+            </div>
+            <ul class="tips-list" id="tipsList"></ul>
+          </div>
+
+          <!-- Re-analyze button -->
+          <button class="btn-outline-iq w-100" onclick="resetDriver()">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Run Another Check
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateSlider(id, valId, suffix) {
+  document.getElementById(valId).textContent = document.getElementById(id).value + suffix;
+}
+
+function updateBatteryViz() {
+  const pct = parseInt(document.getElementById('battery_pct').value);
+  const fill = document.getElementById('batteryFill');
+  const label = document.getElementById('batteryPct');
+  fill.style.height = pct + '%';
+  label.textContent = pct + '%';
+  const color = pct >= 60 ? 'var(--accent-green)' : pct >= 30 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+  fill.style.background = color;
+  label.style.color = color;
+}
+
+const colorMap = {
+  success: { text: 'var(--accent-green)',  bar: '#00d97e' },
+  primary: { text: 'var(--accent-blue)',   bar: '#3b82f6' },
+  warning: { text: 'var(--accent-yellow)', bar: '#f59e0b' },
+  danger:  { text: 'var(--accent-red)',    bar: '#ef4444' },
+  info:    { text: '#06b6d4',              bar: '#06b6d4' }
+};
+
+function applyColor(id, color) {
+  const el = document.getElementById(id);
+  if (el) el.style.color = colorMap[color]?.text || colorMap.success.text;
+}
+
+function applyBarColor(barId, color, width) {
+  const bar = document.getElementById(barId);
+  if (bar) {
+    bar.style.background = colorMap[color]?.bar || colorMap.success.bar;
+    bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = width + '%'; }, 120);
+  }
+}
+
+function animateCounter(el, target, suffix = '') {
+  const start = 0;
+  const duration = 1000;
+  const step = (target / duration) * 16;
+  let current = start;
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = (Number.isInteger(target) ? Math.round(current) : current.toFixed(1)) + suffix;
+    if (current >= target) clearInterval(timer);
+  }, 16);
+}
+
+function generateTips(stress, health, rul, efficiency) {
+  const tips = [];
+  if (health < 75)       tips.push("🔧 Schedule a battery checkup at your service center soon.");
+  if (stress === 'High') tips.push("🌡️ Avoid rapid acceleration — it increases battery stress significantly.");
+  if (rul < 30)          tips.push("⚠️ Only " + rul + " cycles left — start planning for battery replacement.");
+  if (efficiency < 30)   tips.push("⚡ Low efficiency detected — try smoother, more consistent driving.");
+  if (health > 85)       tips.push("✅ Great battery health! Keep up your current charging habits.");
+  if (stress === 'Low')  tips.push("😊 Low stress levels — your driving style is battery-friendly!");
+  if (rul > 100)         tips.push("🎉 Plenty of battery life remaining. No immediate action needed.");
+  tips.push("🔌 Optimal charging: keep battery between 20–80% for maximum longevity.");
+  tips.push("❄️ Avoid leaving your EV in extreme temperatures for extended periods.");
+  return tips.slice(0, 5);
+}
+
+async function analyzeDriver() {
+  document.getElementById('placeholder').classList.add('d-none');
+  document.getElementById('results').classList.add('d-none');
+  document.getElementById('loadingState').classList.remove('d-none');
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="iq-spinner me-2"></span> Analyzing...';
+
+  const payload = {
+    battery_pct  : document.getElementById('battery_pct').value,
+    temperature  : document.getElementById('temperature').value,
+    cycle_count  : document.getElementById('cycle_count').value,
+    trip_duration: document.getElementById('trip_duration').value * 60,
+    ambient_temp : 24
+  };
+
+  try {
+    const response = await fetch('/api/predict/driver', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+
+    // Summary
+    const alertEl = document.getElementById('summaryAlert');
+    alertEl.className = `iq-alert iq-alert-${data.driver_summary.color} mb-4`;
+    document.getElementById('summaryIcon').textContent   = data.driver_summary.color === 'success' ? '✅' : data.driver_summary.color === 'warning' ? '⚠️' : '🚨';
+    document.getElementById('summaryTitle').textContent   = data.driver_summary.title;
+    document.getElementById('summaryMessage').textContent = data.driver_summary.message;
+
+    // Health (animated)
+    const hc = data.health_info.color;
+    const healthEl = document.getElementById('healthScore');
+    document.getElementById('healthStatus').textContent = data.health_info.status;
+    applyColor('healthScore', hc); applyColor('healthStatus', hc);
+    applyBarColor('healthBar', hc, data.health_score);
+    animateCounter(healthEl, parseFloat(data.health_score), '/100');
+
+    // Stress
+    const sc = data.stress_info.color;
+    const stressWidth = { Low: 20, Medium: 55, High: 92 };
+    document.getElementById('stressLabel').textContent   = data.stress_label;
+    document.getElementById('stressMessage').textContent = data.stress_info.message;
+    applyColor('stressLabel', sc);
+    applyBarColor('stressBar', sc, stressWidth[data.stress_label] || 50);
+
+    // RUL (animated)
+    const rc = data.rul_info.color;
+    const rulEl = document.getElementById('rulValue');
+    document.getElementById('rulStatus').textContent = data.rul_info.status;
+    applyColor('rulValue', rc); applyColor('rulStatus', rc);
+    applyBarColor('rulBar', rc, Math.min(100, (data.RUL / 200) * 100));
+    animateCounter(rulEl, parseInt(data.RUL), ' cycles');
+
+    // Efficiency (animated)
+    const ec = data.efficiency_info.color;
+    const effEl = document.getElementById('effScore');
+    document.getElementById('effStatus').textContent = data.efficiency_info.status;
+    applyColor('effScore', ec); applyColor('effStatus', ec);
+    applyBarColor('effBar', ec, data.efficiency_score);
+    animateCounter(effEl, parseFloat(data.efficiency_score), '/100');
+
+    // Tips
+    const tips = generateTips(data.stress_label, data.health_score, data.RUL, data.efficiency_score);
+    document.getElementById('tipsList').innerHTML = tips.map(t =>
+      `<li class="tip-item">${t}</li>`).join('');
+
+    document.getElementById('loadingState').classList.add('d-none');
+    document.getElementById('results').classList.remove('d-none');
+
+  } catch (err) {
+    document.getElementById('loadingState').classList.add('d-none');
+    document.getElementById('placeholder').classList.remove('d-none');
+    // Show error as alert
+    const flash = document.createElement('div');
+    flash.className = 'iq-alert iq-alert-danger mb-3';
+    flash.textContent = 'Error: ' + err.message;
+    document.getElementById('placeholder').prepend(flash);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-cpu-fill"></i> Analyze My Battery';
+}
+
+function resetDriver() {
+  document.getElementById('results').classList.add('d-none');
+  document.getElementById('placeholder').classList.remove('d-none');
+}
+
+// Init battery visual
+updateBatteryViz();
+
+// Navbar scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endblock %}

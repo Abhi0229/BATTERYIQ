@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Prediction History — BatteryIQ{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<section class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <div class="section-badge"><i class="bi bi-graph-up me-1"></i> Prediction History</div>
+        <h1 class="fw-bold mb-1" style="font-size:1.75rem;letter-spacing:-0.5px">Your Battery Records</h1>
+        <p class="text-muted mb-0" style="font-size:0.9rem">
+          {% if current_user.role == 'driver' %}
+            Track how your battery health changes over time.
+          {% else %}
+            All your saved diagnostic records from the database.
+          {% endif %}
+        </p>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        {% if predictions %}
+        <a href="/export_pdf"
+           class="btn-outline-iq"
+           style="padding:0.6rem 1.25rem;font-size:0.875rem;color:var(--accent-red);border-color:rgba(239,68,68,0.3);text-decoration:none">
+          <i class="bi bi-file-earmark-pdf me-1"></i> Export All PDF
+        </a>
+        {% endif %}
+        <span style="background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:99px;padding:0.3rem 0.9rem;font-size:0.8rem;font-weight:700;color:var(--text-secondary)">
+          {{ predictions|length }} records
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if predictions %}
+
+<!-- ── Summary Stats ── -->
+<div class="container mt-4">
+  {% set preds_list = predictions %}
+  {% set total = preds_list|length %}
+  {% set avg_health = (preds_list | map(attribute='health_label') | map('float') | sum) / total %}
+  {% set avg_rul    = (preds_list | map(attribute='rul_value')    | sum) / total %}
+  {% set avg_eff    = (preds_list | map(attribute='efficiency_pct') | sum) / total %}
+  {% set high_stress = preds_list | selectattr('stress_label','equalto','High') | list | length %}
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="iq-card text-center" style="padding:1.25rem">
+        <div style="font-size:2rem;font-weight:900;color:var(--accent-blue);letter-spacing:-1px">{{ total }}</div>
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:700;margin-top:0.2rem">Total Predictions</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="iq-card text-center" style="padding:1.25rem">
+        <div style="font-size:2rem;font-weight:900;letter-spacing:-1px;color:{% if avg_health >= 85 %}var(--accent-green){% elif avg_health >= 70 %}var(--accent-blue){% else %}var(--accent-yellow){% endif %}">
+          {{ "%.1f"|format(avg_health) }}
+        </div>
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:700;margin-top:0.2rem">Avg Health Score</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="iq-card text-center" style="padding:1.25rem">
+        <div style="font-size:2rem;font-weight:900;color:var(--accent-cyan);letter-spacing:-1px">{{ avg_rul|int }}</div>
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:700;margin-top:0.2rem">Avg RUL (cycles)</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="iq-card text-center" style="padding:1.25rem">
+        <div style="font-size:2rem;font-weight:900;color:{% if high_stress > 0 %}var(--accent-red){% else %}var(--accent-green){% endif %};letter-spacing:-1px">{{ high_stress }}</div>
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);font-weight:700;margin-top:0.2rem">High Stress Events</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Charts ── -->
+<div class="container">
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="iq-card">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="fw-bold mb-0"><i class="bi bi-graph-up me-2 text-success"></i>Health Score Trend</h6>
+          <small class="text-muted">All your predictions over time</small>
+        </div>
+        <canvas id="healthTrendChart" height="120"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="iq-card">
+        <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2 text-warning"></i>Stress Distribution</h6>
+        <canvas id="stressPieChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Prediction Table ── -->
+<div class="container mb-5">
+  <div class="iq-card">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-bold mb-0"><i class="bi bi-table me-2 text-info"></i>All Prediction Records</h6>
+      <!-- Filter by stress -->
+      <div class="d-flex gap-2">
+        <button onclick="filterStress('all')"  class="stress-filter active" id="sf-all"   style="background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:99px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:700;color:var(--text-secondary);cursor:pointer;transition:all 0.2s">All</button>
+        <button onclick="filterStress('Low')"  class="stress-filter" id="sf-Low"  style="background:rgba(0,217,126,0.08);border:1px solid rgba(0,217,126,0.2);border-radius:99px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:700;color:var(--accent-green);cursor:pointer;transition:all 0.2s">Low</button>
+        <button onclick="filterStress('Medium')" class="stress-filter" id="sf-Medium" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:99px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:700;color:var(--accent-yellow);cursor:pointer;transition:all 0.2s">Medium</button>
+        <button onclick="filterStress('High')" class="stress-filter" id="sf-High"  style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:99px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:700;color:var(--accent-red);cursor:pointer;transition:all 0.2s">High</button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-dark table-sm table-borderless iq-table mb-0" id="historyTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date & Time</th>
+            <th>Method</th>
+            <th>Stress</th>
+            <th>Health</th>
+            <th>RUL</th>
+            <th>Efficiency</th>
+            <th>PDF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in predictions %}
+          <tr data-stress="{{ p.stress_label }}">
+            <td class="text-muted">{{ loop.index }}</td>
+            <td style="font-size:0.82rem">{{ p.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+            <td>
+              <span class="{% if p.source == 'csv' %}badge-iq-success{% else %}badge-iq-warning{% endif %}" style="font-size:0.7rem">
+                {{ p.source }}
+              </span>
+            </td>
+            <td>
+              <span class="{% if p.stress_label=='High' %}badge-iq-danger{% elif p.stress_label=='Medium' %}badge-iq-warning{% else %}badge-iq-success{% endif %}">
+                {{ p.stress_label }}
+              </span>
+            </td>
+            <td class="fw-bold {% if p.health_label|float >= 85 %}text-success{% elif p.health_label|float >= 70 %}text-primary{% elif p.health_label|float >= 55 %}text-warning{% else %}text-danger{% endif %}">
+              {{ "%.1f"|format(p.health_label|float) }}/100
+            </td>
+            <td class="{% if p.rul_value >= 100 %}text-success{% elif p.rul_value >= 50 %}text-primary{% elif p.rul_value >= 20 %}text-warning{% else %}text-danger{% endif %}">
+              {{ p.rul_value|int }} cyc
+            </td>
+            <td>{{ "%.1f"|format(p.efficiency_pct|float) }}%</td>
+            <td>
+              <a href="/export_pdf/{{ p.id }}" style="color:var(--accent-red);text-decoration:none">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="container mt-5">
+  <div class="iq-card text-center py-5">
+    <div class="float-anim mb-4">
+      <i class="bi bi-battery-charging" style="font-size:4rem;color:var(--accent-green)"></i>
+    </div>
+    <h4 class="fw-bold mb-2">No Predictions Yet</h4>
+    <p class="text-muted mb-4" style="max-width:350px;margin:0 auto 1.5rem">
+      Run your first battery analysis to start tracking health over time.
+    </p>
+    <a href="{{ url_for('dashboard') }}" class="btn-iq-primary" style="width:auto;padding:0.8rem 2.5rem">
+      <i class="bi bi-lightning-charge-fill"></i> Run First Analysis
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+{% if predictions %}
+<script>
+// ── Data from Jinja ──
+const labels     = [{% for p in predictions|reverse %}"{{ p.timestamp.strftime('%d %b') }}",{% endfor %}];
+const healthData = [{% for p in predictions|reverse %}{{ p.health_label|float }},{% endfor %}];
+const rulData    = [{% for p in predictions|reverse %}{{ p.rul_value }},{% endfor %}];
+const stressData = { Low: 0, Medium: 0, High: 0 };
+{% for p in predictions %}stressData["{{ p.stress_label }}"]++;{% endfor %}
+
+const chartDefaults = {
+  plugins: {
+    legend: { labels: { color: '#94a3b8', font: { size: 12, family: 'Inter' } } }
+  },
+  scales: {
+    x: { ticks: { color: '#64748b', font: {size: 11} }, grid: { color: 'rgba(255,255,255,0.04)' } },
+    y: { ticks: { color: '#64748b', font: {size: 11} }, grid: { color: 'rgba(255,255,255,0.04)' } }
+  }
+};
+
+// ── Health Trend Line Chart ──
+new Chart(document.getElementById('healthTrendChart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Health Score',
+      data: healthData,
+      borderColor: '#00d97e',
+      backgroundColor: 'rgba(0,217,126,0.08)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#00d97e',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: { ...chartDefaults.plugins },
+    scales: {
+      x: chartDefaults.scales.x,
+      y: { ...chartDefaults.scales.y, min: 0, max: 100 }
+    }
+  }
+});
+
+// ── Stress Pie Chart ──
+new Chart(document.getElementById('stressPieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Low Stress', 'Medium Stress', 'High Stress'],
+    datasets: [{
+      data: [stressData.Low, stressData.Medium, stressData.High],
+      backgroundColor: ['rgba(0,217,126,0.7)', 'rgba(245,158,11,0.7)', 'rgba(239,68,68,0.7)'],
+      borderColor: ['#00d97e', '#f59e0b', '#ef4444'],
+      borderWidth: 1,
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, font: { size: 11 } } }
+    },
+    cutout: '62%'
+  }
+});
+
+// ── Stress Filter ──
+function filterStress(level) {
+  const rows = document.querySelectorAll('#historyTable tbody tr');
+  rows.forEach(row => {
+    row.style.display = (level === 'all' || row.dataset.stress === level) ? '' : 'none';
+  });
+  document.querySelectorAll('.stress-filter').forEach(b => b.style.opacity = '0.5');
+  const activeBtn = document.getElementById('sf-' + level);
+  if (activeBtn) activeBtn.style.opacity = '1';
+}
+
+// Navbar scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endif %}
+{% endblock %}

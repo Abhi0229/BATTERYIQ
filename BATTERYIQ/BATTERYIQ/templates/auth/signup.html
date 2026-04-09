@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Create Account — BatteryIQ{% endblock %}
+{% block content %}
+<div class="auth-page" style="padding-top:72px;min-height:100vh">
+  <div class="container-fluid h-100">
+    <div class="row g-0" style="min-height:calc(100vh - 72px)">
+
+      <!-- ── LEFT PANEL ── -->
+      <div class="col-lg-5 d-none d-lg-flex auth-left">
+        <div style="position:relative;z-index:1;text-align:center">
+          <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+            <div class="brand-icon" style="width:52px;height:52px;font-size:1.4rem">
+              <i class="bi bi-battery-charging"></i>
+            </div>
+            <div style="text-align:left">
+              <div class="brand-name" style="font-size:1.5rem">BatteryIQ</div>
+              <div class="brand-tag">AI Energy Optimizer</div>
+            </div>
+          </div>
+
+          <h2 class="fw-bold mb-2" style="font-size:1.8rem;letter-spacing:-0.5px">
+            Start for free
+          </h2>
+          <p class="text-muted mb-5" style="font-size:0.95rem;max-width:300px;margin:0 auto 2rem">
+            Join EV drivers and technicians who trust BatteryIQ for real-time battery intelligence.
+          </p>
+
+          <!-- Feature highlights -->
+          <div style="max-width:300px;margin:0 auto;text-align:left">
+            <div class="quick-tip">
+              <span style="font-size:1.1rem">⚡</span> 4 AI predictions from a single check
+            </div>
+            <div class="quick-tip">
+              <span style="font-size:1.1rem">🧠</span> NASA-trained machine learning models
+            </div>
+            <div class="quick-tip">
+              <span style="font-size:1.1rem">📊</span> Full prediction history & PDF exports
+            </div>
+            <div class="quick-tip">
+              <span style="font-size:1.1rem">🗺️</span> EV charging station map (drivers)
+            </div>
+            <div class="quick-tip">
+              <span style="font-size:1.1rem">📁</span> Batch CSV analysis (technicians)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT PANEL (Form) ── -->
+      <div class="col-lg-7 auth-right">
+        <div class="auth-form-wrap">
+          <!-- Mobile logo -->
+          <div class="d-flex d-lg-none align-items-center gap-2 mb-4">
+            <div class="brand-icon"><i class="bi bi-battery-charging"></i></div>
+            <span class="brand-name">BatteryIQ</span>
+          </div>
+
+          <h1 class="fw-bold mb-1" style="font-size:1.8rem;letter-spacing:-0.5px">Create your account</h1>
+          <p class="text-muted mb-4">Free forever. No credit card required.</p>
+
+          <!-- Flash messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+              <div class="iq-alert iq-alert-{{ 'success' if cat=='success' else 'danger' if cat=='danger' else 'info' }} mb-3">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          {% endwith %}
+
+          <form method="POST" action="{{ url_for('signup') }}">
+            <div class="mb-3">
+              <label class="auth-label" for="signupName">Full Name</label>
+              <input type="text" name="name" id="signupName"
+                     class="auth-input" placeholder="John Doe" required autocomplete="name">
+            </div>
+
+            <div class="mb-3">
+              <label class="auth-label" for="signupEmail">Email Address</label>
+              <input type="email" name="email" id="signupEmail"
+                     class="auth-input" placeholder="you@example.com" required autocomplete="email">
+            </div>
+
+            <div class="mb-4">
+              <label class="auth-label" for="signupPassword">Password</label>
+              <div style="position:relative">
+                <input type="password" name="password" id="signupPassword"
+                       class="auth-input" placeholder="Minimum 6 characters" minlength="6"
+                       required autocomplete="new-password" style="padding-right:3rem"
+                       oninput="checkPwdStrength(this.value)">
+                <button type="button" onclick="togglePwd('signupPassword','eyeSignup')"
+                        style="position:absolute;right:0.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0">
+                  <i id="eyeSignup" class="bi bi-eye"></i>
+                </button>
+              </div>
+              <!-- Password strength bar -->
+              <div style="margin-top:0.4rem;height:3px;background:var(--border-color);border-radius:99px;overflow:hidden">
+                <div id="pwdStrengthBar" style="height:100%;width:0%;border-radius:99px;transition:width 0.3s,background 0.3s"></div>
+              </div>
+              <small id="pwdStrengthLabel" class="text-muted"></small>
+            </div>
+
+            <!-- Role Selection -->
+            <div class="mb-4">
+              <label class="auth-label">I am a...</label>
+              <div class="row g-3">
+                <div class="col-6">
+                  <input type="radio" class="role-card-input" name="role" id="roleDriver" value="driver" required>
+                  <label class="role-card-label" for="roleDriver">
+                    <span style="font-size:2rem">🚗</span>
+                    <span class="fw-bold" style="font-size:0.95rem">EV Driver</span>
+                    <span class="text-muted" style="font-size:0.75rem">Simple health checks</span>
+                  </label>
+                </div>
+                <div class="col-6">
+                  <input type="radio" class="role-card-input" name="role" id="roleTech" value="technician">
+                  <label class="role-card-label" for="roleTech">
+                    <span style="font-size:2rem">🔧</span>
+                    <span class="fw-bold" style="font-size:0.95rem">Technician</span>
+                    <span class="text-muted" style="font-size:0.75rem">Full diagnostics</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-iq-primary mb-3">
+              <i class="bi bi-person-plus-fill"></i> Create My Account
+            </button>
+          </form>
+
+          <div style="border-top:1px solid var(--glass-border);padding-top:1.25rem;margin-top:0.5rem">
+            <p class="text-center mb-0" style="font-size:0.9rem;color:var(--text-secondary)">
+              Already have an account?
+              <a href="{{ url_for('login') }}" style="color:var(--accent-green);font-weight:600;text-decoration:none">
+                Sign in →
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePwd(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const eye = document.getElementById(eyeId);
+  input.type = input.type === 'password' ? 'text' : 'password';
+  eye.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+
+function checkPwdStrength(pwd) {
+  const bar = document.getElementById('pwdStrengthBar');
+  const label = document.getElementById('pwdStrengthLabel');
+  let score = 0;
+  if (pwd.length >= 6) score++;
+  if (pwd.length >= 10) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+  const levels = [
+    { pct: '0%',   color: 'transparent', text: '' },
+    { pct: '25%',  color: '#ef4444', text: 'Weak' },
+    { pct: '50%',  color: '#f59e0b', text: 'Fair' },
+    { pct: '75%',  color: '#3b82f6', text: 'Good' },
+    { pct: '100%', color: '#00d97e', text: 'Strong' },
+  ];
+  const l = levels[Math.min(score, 4)];
+  bar.style.width = l.pct;
+  bar.style.background = l.color;
+  label.textContent = l.text;
+  label.style.color = l.color;
+}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endblock %}

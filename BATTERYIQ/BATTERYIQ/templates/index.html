@@ -1,0 +1,483 @@
+{% extends "base.html" %}
+{% block title %}BatteryIQ — AI Battery Health Monitor for EV Fleets{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="BatteryIQ uses NASA-trained ML models to predict EV battery stress, health score, remaining useful life, and efficiency in real time.">
+{% endblock %}
+
+{% block content %}
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  HERO SECTION                                ║
+     ╚══════════════════════════════════════════════╝ -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+
+      <!-- LEFT: Copy -->
+      <div class="col-lg-6">
+        <div class="section-badge fade-in-up">
+          <i class="bi bi-cpu-fill"></i> NASA-Trained AI Models
+        </div>
+
+        <h1 class="hero-title fade-in-up delay-1">
+          Predict EV Battery Health
+          <span class="gradient-text">Before It Fails</span>
+        </h1>
+
+        <p class="hero-subtitle mb-4 fade-in-up delay-2">
+          BatteryIQ uses machine learning trained on real NASA battery cycle data
+          to predict <strong style="color:var(--text-primary)">Stress, Health Score, Remaining Life & Efficiency</strong> —
+          giving drivers and technicians actionable insights in seconds.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="d-flex flex-wrap gap-3 mb-5 fade-in-up delay-3">
+          <a href="{{ url_for('signup') }}" class="btn-iq-primary" style="width:auto;padding:0.8rem 2rem">
+            <i class="bi bi-lightning-charge-fill"></i> Get Started Free
+          </a>
+          <a href="{{ url_for('login') }}" class="btn-outline-iq" style="padding:0.8rem 2rem">
+            <i class="bi bi-box-arrow-in-right"></i> Sign In
+          </a>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 fade-in-up delay-4">
+          <div class="col-3">
+            <div class="hero-stat">
+              <div class="hero-stat-value" id="ctr1">97%</div>
+              <div class="hero-stat-label">Stress<br>Accuracy</div>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="hero-stat">
+              <div class="hero-stat-value" id="ctr2">95%</div>
+              <div class="hero-stat-label">RUL<br>Accuracy</div>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="hero-stat">
+              <div class="hero-stat-value" id="ctr3">7.5K+</div>
+              <div class="hero-stat-label">NASA<br>Cycles</div>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="hero-stat">
+              <div class="hero-stat-value" id="ctr4">34</div>
+              <div class="hero-stat-label">Batteries<br>in Dataset</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Interactive Battery Card -->
+      <div class="col-lg-6">
+        <div class="hero-card fade-in-up delay-2">
+          <!-- Header -->
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="live-badge">
+                  <span class="live-dot"></span> LIVE DEMO
+                </span>
+                <span class="text-muted" style="font-size:0.75rem">NASA B0005</span>
+              </div>
+              <h5 class="mb-0 fw-bold" id="heroCardTitle" style="font-size:1rem">Battery Snapshot</h5>
+              <small class="text-muted">Cycle <span id="heroCycle">1</span> · Real Data</small>
+            </div>
+            <div class="d-flex gap-1">
+              <button class="showcase-tab active" id="tab0" onclick="showCase(0)">🟢 Healthy</button>
+              <button class="showcase-tab" id="tab1" onclick="showCase(1)">🟡 Aging</button>
+              <button class="showcase-tab" id="tab2" onclick="showCase(2)">🔴 Critical</button>
+            </div>
+          </div>
+
+          <!-- Context -->
+          <div class="showcase-context mb-3" id="heroContext">
+            A brand-new battery — full health, low stress, 167 charge cycles of life remaining.
+          </div>
+
+          <!-- 4 Metrics -->
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="mini-metric-card">
+                <div class="mini-metric-icon" id="heroHealthIcon"><i class="bi bi-heart-pulse-fill text-success"></i></div>
+                <div class="mini-metric-value" id="heroHealth">—</div>
+                <div class="mini-metric-label">Health Score</div>
+                <div class="iq-progress mt-2">
+                  <div class="iq-progress-bar" id="heroHealthBar" style="width:0%;background:var(--accent-green)"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mini-metric-card">
+                <div class="mini-metric-icon" id="heroStressIcon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div class="mini-metric-value" id="heroStress">—</div>
+                <div class="mini-metric-label">Stress Level</div>
+                <div class="iq-progress mt-2">
+                  <div class="iq-progress-bar" id="heroStressBar" style="width:0%;background:var(--accent-green)"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mini-metric-card">
+                <div class="mini-metric-icon" id="heroRULIcon"><i class="bi bi-clock-history"></i></div>
+                <div class="mini-metric-value" id="heroRUL">—</div>
+                <div class="mini-metric-label">Cycles Left (RUL)</div>
+                <div class="iq-progress mt-2">
+                  <div class="iq-progress-bar" id="heroRULBar" style="width:0%;background:var(--accent-blue)"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mini-metric-card">
+                <div class="mini-metric-icon text-info"><i class="bi bi-lightning-charge-fill"></i></div>
+                <div class="mini-metric-value text-info" id="heroEff">—</div>
+                <div class="mini-metric-label">Efficiency</div>
+                <div class="iq-progress mt-2">
+                  <div class="iq-progress-bar" id="heroEffBar" style="width:0%;background:var(--accent-cyan)"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Alert -->
+          <div class="iq-alert" id="heroStatus"></div>
+
+          <!-- Auto-cycle progress -->
+          <div class="d-flex align-items-center justify-content-between mt-2">
+            <small class="text-muted">Auto-cycling every 4s</small>
+            <div style="width:80px;height:3px;background:var(--border-color);border-radius:99px;overflow:hidden">
+              <div id="autoCycleBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent-green),var(--accent-blue));transition:width 4s linear;border-radius:99px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  HOW IT WORKS                                ║
+     ╚══════════════════════════════════════════════╝ -->
+<section class="py-5" style="border-top:1px solid var(--glass-border)">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-badge">Simple Process</div>
+      <h2 class="fw-bold" style="font-size:2rem;letter-spacing:-0.5px">How BatteryIQ Works</h2>
+      <p class="text-muted">Three steps to full battery intelligence</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4 text-center">
+        <div class="iq-card iq-card-glow h-100">
+          <div class="step-number">1</div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div>
+          <h5 class="fw-bold mb-2">Enter Your Data</h5>
+          <p class="text-muted small mb-0">
+            Drivers use 4 simple sliders. Technicians input 17 sensor readings. Or upload a batch CSV for fleet analysis.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4 text-center">
+        <div class="iq-card iq-card-glow h-100">
+          <div class="step-number" style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(168,85,247,0.15));border-color:rgba(59,130,246,0.25);color:var(--accent-blue)">2</div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">🧠</div>
+          <h5 class="fw-bold mb-2">4 AI Models Run</h5>
+          <p class="text-muted small mb-0">
+            Our ML models (trained on NASA data) simultaneously predict Stress, Health Score, RUL, and Efficiency.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4 text-center">
+        <div class="iq-card iq-card-glow h-100">
+          <div class="step-number" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.15));border-color:rgba(245,158,11,0.25);color:var(--accent-yellow)">3</div>
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">⚡</div>
+          <h5 class="fw-bold mb-2">Get Instant Results</h5>
+          <p class="text-muted small mb-0">
+            Receive color-coded results with plain-English explanations, actionable tips, and exportable PDF reports.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  4 AI PREDICTIONS                            ║
+     ╚══════════════════════════════════════════════╝ -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-badge">AI Predictions</div>
+      <h2 class="fw-bold" style="font-size:2rem;letter-spacing:-0.5px">4 Metrics, Zero Guesswork</h2>
+      <p class="text-muted">Every prediction backed by NASA battery research</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Stress -->
+      <div class="col-md-6 col-lg-3">
+        <div class="iq-card h-100 text-center iq-card-glow">
+          <div class="feature-icon-wrap" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2)">
+            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Battery Stress</h5>
+          <p class="text-muted small mb-3">
+            Classifies operating stress as <strong>Low, Medium, or High</strong> based on voltage, current and temperature patterns.
+          </p>
+          <div class="mt-auto">
+            <span class="badge-iq-success">97% Accuracy</span>
+          </div>
+        </div>
+      </div>
+      <!-- Health -->
+      <div class="col-md-6 col-lg-3">
+        <div class="iq-card h-100 text-center iq-card-glow">
+          <div class="feature-icon-wrap" style="background:rgba(0,217,126,0.1);border:1px solid rgba(0,217,126,0.2)">
+            <i class="bi bi-heart-pulse-fill text-success"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Health Score</h5>
+          <p class="text-muted small mb-3">
+            A <strong>0–100 score</strong> showing remaining capacity. Above 85 is excellent; below 70 needs attention.
+          </p>
+          <div class="mt-auto">
+            <span class="badge-iq-success">97% Accuracy</span>
+          </div>
+        </div>
+      </div>
+      <!-- RUL -->
+      <div class="col-md-6 col-lg-3">
+        <div class="iq-card h-100 text-center iq-card-glow">
+          <div class="feature-icon-wrap" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2)">
+            <i class="bi bi-clock-history text-warning"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Remaining Life</h5>
+          <p class="text-muted small mb-3">
+            Predicts exact <strong>charge cycles remaining</strong> before battery degradation requires replacement.
+          </p>
+          <div class="mt-auto">
+            <span class="badge-iq-success">95% Accuracy</span>
+          </div>
+        </div>
+      </div>
+      <!-- Efficiency -->
+      <div class="col-md-6 col-lg-3">
+        <div class="iq-card h-100 text-center iq-card-glow">
+          <div class="feature-icon-wrap" style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2)">
+            <i class="bi bi-lightning-charge-fill text-info"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Efficiency Score</h5>
+          <p class="text-muted small mb-3">
+            Measures how efficiently the battery converts stored energy into usable output power over each cycle.
+          </p>
+          <div class="mt-auto">
+            <span class="badge-iq-success">99% Accuracy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  TWO USER TYPES                              ║
+     ╚══════════════════════════════════════════════╝ -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-badge">Two Interfaces</div>
+      <h2 class="fw-bold" style="font-size:2rem;letter-spacing:-0.5px">Built for Everyone in the EV Ecosystem</h2>
+    </div>
+
+    <div class="row g-4">
+      <!-- Driver -->
+      <div class="col-md-6">
+        <div class="iq-card user-card h-100" style="border-color:rgba(0,217,126,0.15)">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div style="width:52px;height:52px;background:rgba(0,217,126,0.1);border:1px solid rgba(0,217,126,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🚗</div>
+            <div>
+              <h3 class="fw-bold mb-0" style="font-size:1.3rem">EV Driver</h3>
+              <small class="text-muted">Simple, no-jargon interface</small>
+            </div>
+          </div>
+          <p class="text-muted mb-4">
+            Just 4 sliders — battery level, temperature, charge cycles, and trip duration.
+            Get an instant color-coded report with plain English explanations.
+          </p>
+          <div class="feature-list mb-4">
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-success"></i>Simple 4-slider input form</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-success"></i>Traffic-light color coding</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-success"></i>Plain English explanations</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-success"></i>AI-generated driving tips</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-success"></i>EV charging station map</div>
+          </div>
+          <a href="{{ url_for('signup') }}" class="btn-iq-primary mt-auto" style="width:auto;padding:0.75rem 2rem">
+            <i class="bi bi-arrow-right"></i> Start as Driver
+          </a>
+        </div>
+      </div>
+
+      <!-- Technician -->
+      <div class="col-md-6">
+        <div class="iq-card user-card h-100" style="border-color:rgba(245,158,11,0.15)">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div style="width:52px;height:52px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🔧</div>
+            <div>
+              <h3 class="fw-bold mb-0" style="font-size:1.3rem">EV Technician</h3>
+              <small class="text-muted">Full diagnostic power</small>
+            </div>
+          </div>
+          <p class="text-muted mb-4">
+            17 raw sensor fields — voltage, current, temperature, power, energy.
+            Upload batch CSVs for fleet-wide analysis and export professional PDF reports.
+          </p>
+          <div class="feature-list mb-4">
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-warning"></i>17 sensor input fields</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-warning"></i>Sensor range validation table</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-warning"></i>Batch CSV upload &amp; processing</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-warning"></i>Fleet diagnosis history</div>
+            <div class="feature-list-item"><i class="bi bi-check-circle-fill text-warning"></i>PDF export for each reading</div>
+          </div>
+          <a href="{{ url_for('signup') }}" class="btn-outline-iq mt-auto" style="width:auto;padding:0.75rem 2rem">
+            <i class="bi bi-arrow-right"></i> Start as Technician
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  FINAL CTA                                   ║
+     ╚══════════════════════════════════════════════╝ -->
+<section class="py-5">
+  <div class="container">
+    <div class="iq-card text-center py-5" style="background:linear-gradient(135deg,rgba(0,217,126,0.06),rgba(59,130,246,0.06));border-color:rgba(0,217,126,0.12)">
+      <div style="font-size:3rem;margin-bottom:1rem">⚡</div>
+      <h2 class="fw-bold mb-2" style="letter-spacing:-0.5px">Ready to protect your battery?</h2>
+      <p class="text-muted mb-4" style="max-width:500px;margin:0 auto 1.5rem">
+        Join drivers and technicians using BatteryIQ to extend EV battery life, reduce costs, and prevent breakdowns.
+      </p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="{{ url_for('signup') }}" class="btn-iq-primary" style="width:auto;padding:0.85rem 2.5rem">
+          <i class="bi bi-lightning-charge-fill"></i> Create Free Account
+        </a>
+        <a href="{{ url_for('login') }}" class="btn-outline-iq" style="padding:0.85rem 2.5rem">
+          Sign In
+        </a>
+      </div>
+      <p class="text-muted mt-3 mb-0" style="font-size:0.8rem">No credit card required · Free forever</p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Showcase data ──
+const CASES = [
+  {
+    id: 'B0005', cycle: 1,
+    health: 100.0, stress: 'Low', rul: 167, efficiency: 38.9,
+    context: 'A brand-new battery — full health, low stress, 167 charge cycles of life remaining. This is what BatteryIQ looks like when everything is fine.',
+    status: { cls: 'iq-alert-success', text: '✅ Battery is Healthy — No action required. Keep enjoying your ride!' }
+  },
+  {
+    id: 'B0005', cycle: 80,
+    health: 84.3, stress: 'Medium', rul: 88, efficiency: 38.8,
+    context: 'Same battery at cycle 80 — health has dropped, stress is rising. BatteryIQ catches early aging before it becomes a problem.',
+    status: { cls: 'iq-alert-warning', text: '⚠️ Battery Aging Detected — Schedule a service visit within the next month.' }
+  },
+  {
+    id: 'B0005', cycle: 163,
+    health: 69.9, stress: 'High', rul: 5, efficiency: 33.6,
+    context: 'Near end-of-life — only 5 cycles left. BatteryIQ would have flagged this weeks earlier, giving time to plan a replacement.',
+    status: { cls: 'iq-alert-danger', text: '🚨 Battery Needs Attention — Replacement recommended immediately!' }
+  }
+];
+
+const colorMap = {
+  success: '#00d97e',
+  primary: '#3b82f6',
+  warning: '#f59e0b',
+  danger:  '#ef4444',
+  info:    '#06b6d4'
+};
+
+const healthColor   = h => h >= 85 ? 'success' : h >= 70 ? 'primary' : h >= 55 ? 'warning' : 'danger';
+const stressColor   = { Low: 'success', Medium: 'warning', High: 'danger' };
+const stressWidth   = { Low: 18, Medium: 55, High: 92 };
+
+function setBar(id, color, pct) {
+  const bar = document.getElementById(id);
+  if (!bar) return;
+  bar.style.background = colorMap[color] || color;
+  bar.style.width = '0%';
+  setTimeout(() => { bar.style.width = Math.max(0, Math.min(100, pct)) + '%'; }, 100);
+}
+
+function showCase(idx) {
+  const b = CASES[idx];
+  document.querySelectorAll('.showcase-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+
+  document.getElementById('heroCycle').textContent   = b.cycle;
+  document.getElementById('heroContext').textContent = b.context;
+
+  const hc = healthColor(b.health);
+  document.getElementById('heroHealth').textContent     = b.health + '/100';
+  document.getElementById('heroHealth').style.color     = colorMap[hc];
+  document.getElementById('heroHealthIcon').style.color = colorMap[hc];
+  setBar('heroHealthBar', hc, b.health);
+
+  const sc = stressColor[b.stress] || 'warning';
+  document.getElementById('heroStress').textContent     = b.stress;
+  document.getElementById('heroStress').style.color     = colorMap[sc];
+  document.getElementById('heroStressIcon').style.color = colorMap[sc];
+  setBar('heroStressBar', sc, stressWidth[b.stress] || 50);
+
+  const rc = b.rul >= 100 ? 'success' : b.rul >= 50 ? 'primary' : b.rul >= 20 ? 'warning' : 'danger';
+  document.getElementById('heroRUL').textContent     = b.rul + ' cycles';
+  document.getElementById('heroRUL').style.color     = colorMap[rc];
+  document.getElementById('heroRULIcon').style.color = colorMap[rc];
+  setBar('heroRULBar', rc, Math.min(100, (b.rul / 200) * 100));
+
+  document.getElementById('heroEff').textContent = b.efficiency + '/100';
+  setBar('heroEffBar', 'info', b.efficiency);
+
+  const s = document.getElementById('heroStatus');
+  s.className = 'iq-alert ' + b.status.cls;
+  s.innerHTML = b.status.text;
+}
+
+// Auto-cycle with progress bar
+let autoIdx = 0;
+let bar = document.getElementById('autoCycleBar');
+
+function startCycleBar() {
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  setTimeout(() => {
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '100%';
+  }, 30);
+}
+
+function autoCycle() {
+  autoIdx = (autoIdx + 1) % CASES.length;
+  showCase(autoIdx);
+  startCycleBar();
+}
+
+window.addEventListener('load', () => {
+  showCase(0);
+  startCycleBar();
+  setInterval(autoCycle, 4000);
+});
+
+// Navbar scroll effect
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNavbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+</script>
+{% endblock %}
