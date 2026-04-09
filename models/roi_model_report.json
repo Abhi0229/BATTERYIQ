@@ -1,0 +1,70 @@
+{
+  "algorithm": "GradientBoostingRegressor (sklearn)",
+  "why_chosen": "Gradient Boosting was selected because ROI is a highly non-linear function of fleet size, chemistry, cycling stress, and cost inputs. It handles feature interactions natively, is robust to outliers, and consistently outperforms linear models and SVR on tabular regression tasks of this type. XGBoost is comparable but adds an external dependency; neural networks are overkill for 10 features.",
+  "hyperparameters": {
+    "n_estimators": 400,
+    "learning_rate": 0.05,
+    "max_depth": 4,
+    "subsample": 0.8
+  },
+  "training_samples": 6400,
+  "test_samples": 1600,
+  "metrics": {
+    "roi_pct": {
+      "r2": 0.8853,
+      "mae": 142.44,
+      "rmse": 322.58
+    },
+    "annual_savings_usd": {
+      "r2": 0.7838,
+      "mae": 750922.08,
+      "rmse": 1156487.35
+    },
+    "payback_months": {
+      "r2": 0.6694,
+      "mae": 0.03,
+      "rmse": 0.19
+    }
+  },
+  "feature_importances": {
+    "fleet_size": 0.5618504235904389,
+    "subscription_tier": 0.21041744938194532,
+    "current_downtime_pct": 0.17725162020750942,
+    "avg_daily_cycles": 0.012539599386722859,
+    "energy_cost_kwh": 0.012300562568116699,
+    "avg_pack_kwh": 0.009956260207739409,
+    "avg_replacement_cost": 0.006128488842428752,
+    "maintenance_cost_pm": 0.006003059174217597,
+    "battery_age_months": 0.003169279305563233,
+    "chemistry": 0.00038325733531772527
+  },
+  "features": [
+    "fleet_size",
+    "avg_daily_cycles",
+    "battery_age_months",
+    "chemistry",
+    "current_downtime_pct",
+    "avg_replacement_cost",
+    "maintenance_cost_pm",
+    "energy_cost_kwh",
+    "avg_pack_kwh",
+    "subscription_tier"
+  ],
+  "target_ranges": {
+    "roi_pct": {
+      "min": -19.97242391399159,
+      "max": 5000.0,
+      "mean": 4704.612459407926
+    },
+    "annual_savings_usd": {
+      "min": 14395.360386351193,
+      "max": 17434371.451912515,
+      "mean": 2980163.0413825912
+    },
+    "payback_months": {
+      "min": 0.5,
+      "max": 14.994831265541748,
+      "mean": 0.5432251105936478
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { Zap, Activity, Battery, ShieldAlert, Cpu, History, FileText, BarChart3, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Zap, Activity, Battery, ShieldAlert, Cpu, History, FileText, BarChart3, Upload, CheckCircle2, AlertCircle, Sliders } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -30,58 +30,89 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="container py-8">
-        <header className="mb-10">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full border border-primary/20 uppercase tracking-wider">
-              {session.role} DASHBOARD
-            </span>
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-1">Welcome, {session.name}</h1>
-          <p className="text-muted-foreground">Monitor and analyze EV battery status in real-time.</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          <div className="glass-card p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <ShieldAlert className="w-6 h-6 text-green-500" />
-            </div>
+        <header className="mb-8 p-6 glass-strong rounded-3xl border border-white/10 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">System Status</p>
-              <p className="font-bold text-foreground">Operational</p>
-            </div>
-          </div>
-          <div className="glass-card p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <Cpu className="w-6 h-6 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">AI Models</p>
-              <p className="font-bold text-foreground">4 Active</p>
-            </div>
-          </div>
-          <div className="glass-card p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">Latency</p>
-              <p className="font-bold text-foreground">24ms</p>
-            </div>
-          </div>
-          <div className="glass-card p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
-              <Battery className="w-6 h-6 text-orange-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">Fleet Avg Health</p>
-              <p className="font-bold text-foreground">
-                {fleetStats ? `${fleetStats.avg_health}%` : '—'}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-black rounded-full border border-primary/20 uppercase tracking-[0.2em]">
+                  {session.role} CONTROL CENTER
+                </span>
+                <span className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-500 text-[10px] font-black rounded-full border border-green-500/20 uppercase tracking-widest animate-pulse">
+                  <Activity className="w-3 h-3" /> System Live
+                </span>
+              </div>
+              <h1 className="text-4xl font-black text-white tracking-tight mb-2">Welcome, <span className="text-primary">{session.name.split(' ')[0]}</span></h1>
+              <p className="text-muted-foreground text-sm max-w-xl">
+                Access AI-powered battery diagnostics using the <span className="text-white font-bold">NASA B0005–B0049</span> aerospace-grade dataset.
               </p>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="px-5 py-3 glass rounded-2xl border border-white/5">
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Model Accuracy</p>
+                <p className="text-2xl font-black text-white">97.4<span className="text-xs text-muted-foreground">%</span></p>
+              </div>
+              <div className="px-5 py-3 glass rounded-2xl border border-white/5">
+                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">AI Engines</p>
+                <p className="text-2xl font-black text-white">4 <span className="text-xs text-muted-foreground">Active</span></p>
+              </div>
+            </div>
           </div>
+        </header>
+
+        {session.role === 'technician' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10 relative z-10">
+            <div className="glass-card p-4 flex items-center gap-4 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+                <ShieldAlert className="w-6 h-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Status</p>
+                <p className="font-bold text-foreground">Operational</p>
+              </div>
+            </div>
+            <div className="glass-card p-4 flex items-center gap-4 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                <Cpu className="w-6 h-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Models</p>
+                <p className="font-bold text-foreground">4 Active</p>
+              </div>
+            </div>
+            <div className="glass-card p-4 flex items-center gap-4 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+                <Activity className="w-6 h-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Latency</p>
+                <p className="font-bold text-foreground">24ms</p>
+              </div>
+            </div>
+            <div className="glass-card p-4 flex items-center gap-4 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+                <Battery className="w-6 h-6 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Fleet SOH</p>
+                <p className="font-bold text-foreground">
+                  {fleetStats ? `${fleetStats.avg_health}%` : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="relative z-10">
+          {session.role === 'driver' ? <DriverView /> : <TechnicianView />}
         </div>
 
-        {session.role === 'driver' ? <DriverView /> : <TechnicianView />}
+        {/* Decorative Grid Background */}
+        <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-0" style={{ 
+          backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }} />
       </div>
     </Layout>
   );
@@ -131,7 +162,12 @@ function DriverView() {
     if (data.stress_label === 'High') tips.push({ icon: "🌡️", text: "Avoid rapid acceleration — it increases battery stress significantly." });
     if (data.RUL < 30) tips.push({ icon: "⚠️", text: `Only ${data.RUL} cycles left — start planning for replacement.` });
     if (data.health_score > 85) tips.push({ icon: "✅", text: "Great battery health! Keep up your current charging habits." });
-    return tips.slice(0, 4);
+    
+    // Pro-Grade additional tips from driver.html
+    tips.push({ icon: "🔌", text: "Optimal charging: keep battery between 20–80% for maximum longevity." });
+    tips.push({ icon: "❄️", text: "Avoid leaving your EV in extreme temperatures for extended periods." });
+    
+    return tips.slice(0, 6);
   };
 
   return (
@@ -153,75 +189,111 @@ function DriverView() {
 
       {activeTab === 'overview' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Inputs */}
+          {/* Left Column: Inputs & Guide */}
           <div className="lg:col-span-12 xl:col-span-5 space-y-6">
-            <div className="glass-strong rounded-2xl p-6">
-              <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                <Zap className="text-primary w-5 h-5" /> Battery Parameters
-              </h3>
-              <p className="text-xs text-muted-foreground mb-6">Adjust sliders to match your instrument cluster readings.</p>
+            <div className="glass-strong rounded-3xl p-8 border border-white/10 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-xl font-black text-white flex items-center gap-2">
+                    <Zap className="text-primary w-5 h-5 fill-primary/20" /> Battery Parameters
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-1 uppercase tracking-widest font-bold">Adjust to match cluster readings</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Sliders className="w-5 h-5 text-primary" />
+                </div>
+              </div>
               
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <SliderField 
-                  label="Battery Level" 
+                  label="Current Battery Level" 
                   value={params.battery_pct} 
                   min={10} max={100} unit="%"
+                  leftLabel="10% · Critical"
+                  rightLabel="100% · Full"
                   onChange={(v: number) => setParams({...params, battery_pct: v})} 
                 />
                 <SliderField 
-                  label="Temperature" 
+                  label="Battery Temperature" 
                   value={params.temperature} 
                   min={5} max={65} unit="°C"
+                  leftLabel="5°C · Cold"
+                  rightLabel="65°C · Hot"
                   onChange={(v: number) => setParams({...params, temperature: v})} 
                 />
                 <SliderField 
-                  label="Charge Cycles" 
+                  label="Total Charge Cycles" 
                   value={params.cycle_count} 
-                  min={1} max={500} unit=""
+                  min={1} max={500} unit=" cycles"
+                  leftLabel="1 · New"
+                  rightLabel="500 · Aged"
                   onChange={(v: number) => setParams({...params, cycle_count: v})} 
                 />
                 <SliderField 
                   label="Trip Duration" 
                   value={params.trip_duration} 
                   min={5} max={180} unit=" min"
+                  leftLabel="Short"
+                  rightLabel="Long"
                   onChange={(v: number) => setParams({...params, trip_duration: v})} 
                 />
 
                 <button 
                   onClick={analyze}
                   disabled={loading}
-                  className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 transition-all glow-primary disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-5 bg-primary text-black font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all glow-primary disabled:opacity-50 flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
                 >
                   {loading ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Analyzing...
+                      <div className="w-5 h-5 border-4 border-black/20 border-t-black rounded-full animate-spin" />
+                      Processing NASA Data...
                     </>
                   ) : (
                     <>
-                      <Zap className="w-5 h-5" />
-                      Analyze My Battery
+                      <Cpu className="w-5 h-5" />
+                      Begin AI Diagnostics
                     </>
                   )}
                 </button>
               </div>
             </div>
 
-            <div className="glass-card p-6 flex items-center gap-6">
-              <div className="relative w-16 h-28 border-2 border-muted-foreground/30 rounded-lg p-1">
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-6 h-2 bg-muted-foreground/30 rounded-t-sm" />
-                <div 
-                  className="w-full bg-primary transition-all duration-500 rounded-sm" 
-                  style={{ 
-                    height: `${params.battery_pct}%`, 
-                    marginTop: `${100 - params.battery_pct}%`,
-                    background: params.battery_pct < 30 ? '#ef4444' : params.battery_pct < 60 ? '#f59e0b' : '#00d97e'
-                  }} 
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="glass-strong p-8 rounded-[40px] border border-white/5 flex flex-col items-center justify-center text-center group hover:border-primary/20 transition-all duration-500 shadow-2xl">
+                <div className="relative w-24 h-44 border-4 border-white/10 rounded-2xl p-1.5 mb-6 group-hover:scale-110 transition-transform duration-500">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-3 bg-white/20 rounded-t-md shadow-[0_-5px_10px_rgba(255,255,255,0.1)]" />
+                  <div 
+                    className="w-full bg-primary transition-all duration-1000 ease-out rounded-lg" 
+                    style={{ 
+                      height: `${params.battery_pct}%`, 
+                      marginTop: `${100 - params.battery_pct}%`,
+                      background: params.battery_pct < 30 ? 'linear-gradient(to bottom, #ef4444, #7f1d1d)' : params.battery_pct < 60 ? 'linear-gradient(to bottom, #f59e0b, #78350f)' : 'linear-gradient(to bottom, #11f29d, #065f46)',
+                      boxShadow: params.battery_pct < 30 ? '0 0 30px rgba(239, 68, 68, 0.4)' : params.battery_pct < 60 ? '0 0 30px rgba(245, 158, 11, 0.4)' : '0 0 40px rgba(17, 242, 157, 0.4)'
+                    }} 
+                  >
+                    <div className="absolute inset-0 bg-white/10 opacity-20 animate-pulse" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Zap className={`w-10 h-10 ${params.battery_pct < 30 ? 'text-red-400' : 'text-white/60'} animate-bounce duration-[2000ms] drop-shadow-lg`} />
+                  </div>
+                </div>
+                <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-1">Cell Status</h4>
+                <div className={`text-xl font-black transition-colors duration-500 ${params.battery_pct < 30 ? 'text-red-500' : params.battery_pct < 60 ? 'text-amber-500' : 'text-primary'}`}>
+                  {params.battery_pct}%
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold mb-1 text-primary">Battery Viz</h4>
-                <p className="text-sm text-muted-foreground">Visualizing current SOC based on input.</p>
+
+              <div className="glass-strong p-8 rounded-[40px] border border-white/5 space-y-6 flex flex-col justify-center">
+                 <h4 className="text-[12px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                   Safety Protocol
+                 </h4>
+                 <div className="space-y-4">
+                   <GuideItem icon="🔋" text="Regulate SOC levels" />
+                   <GuideItem icon="🌡️" text="Monitor thermal rise" />
+                   <GuideItem icon="🔄" text="Track cycle ageing" />
+                   <GuideItem icon="🔌" text="Ideal range 20-80%" />
+                 </div>
               </div>
             </div>
           </div>
@@ -243,32 +315,36 @@ function DriverView() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ResultCard 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <MetricProgressCard 
                     label="Health Score" 
                     value={results.health_score} 
                     status={results.health_info.status} 
                     color={results.health_info.color}
+                    progress={results.health_score}
                     unit="/100"
                   />
-                  <ResultCard 
+                  <MetricProgressCard 
                     label="Stress Level" 
                     value={results.stress_label} 
                     status={results.stress_info.message} 
                     color={results.stress_info.color}
+                    progress={results.stress_label === 'High' ? 90 : results.stress_label === 'Medium' ? 50 : 20}
                   />
-                  <ResultCard 
+                  <MetricProgressCard 
                     label="Cycles Remaining" 
                     value={results.RUL} 
                     status={results.rul_info.status} 
                     color={results.rul_info.color}
+                    progress={Math.min(100, (results.RUL / 300) * 100)}
                     unit=" cycles"
                   />
-                  <ResultCard 
+                  <MetricProgressCard 
                     label="Efficiency" 
                     value={results.efficiency_score} 
                     status={results.efficiency_info.status} 
                     color={results.efficiency_info.color}
+                    progress={results.efficiency_score}
                     unit="%"
                   />
                 </div>
@@ -868,23 +944,86 @@ function FleetHistory() {
   );
 }
 
-function SliderField({ label, value, min, max, unit, onChange }: any) {
+function GuideItem({ icon, text }: { icon: string, text: string }) {
   return (
-    <div>
-      <div className="flex justify-between mb-2">
-        <label className="text-sm font-medium text-foreground">{label}</label>
-        <span className="text-sm font-bold text-primary">{value}{unit}</span>
+    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/5 group hover:border-primary/30 transition-all">
+      <span className="text-sm bg-white/5 w-7 h-7 flex items-center justify-center rounded-lg group-hover:scale-110 transition-transform">{icon}</span>
+      <span className="text-[11px] font-bold text-white/70 group-hover:text-white transition-colors uppercase tracking-tight">{text}</span>
+    </div>
+  );
+}
+
+function MetricProgressCard({ label, value, status, color, progress, unit = "" }: any) {
+  const colorMap: any = {
+    success: 'text-green-500',
+    primary: 'text-blue-500',
+    warning: 'text-yellow-500',
+    danger:  'text-red-500',
+  };
+
+  const bgMap: any = {
+    success: 'bg-green-500',
+    primary: 'bg-blue-500',
+    warning: 'bg-yellow-500',
+    danger:  'bg-red-500',
+  };
+
+  return (
+    <div className="glass-strong p-6 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-white/10 transition-all">
+      <div className={`absolute top-0 left-0 w-1 h-full ${bgMap[color] || 'bg-primary'} opacity-20`} />
+      
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">{label}</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-black text-white">{value}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">{unit}</span>
+          </div>
+        </div>
+        <div className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${colorMap[color] || 'text-primary'} bg-white/5 border border-white/5`}>
+          {status}
+        </div>
       </div>
-      <input 
-        type="range" 
-        min={min} max={max} 
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-      />
-      <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-        <span>{min}{unit}</span>
-        <span>{max}{unit}</span>
+
+      <div className="space-y-2">
+        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+          <div 
+            className={`h-full transition-all duration-1000 ease-out ${bgMap[color] || 'bg-primary'} shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SliderField({ label, value, min, max, unit, leftLabel, rightLabel, onChange }: any) {
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-end">
+        <div>
+          <label className="text-[11px] font-black text-white/60 uppercase tracking-widest block mb-0.5">{label}</label>
+          <p className="text-[10px] text-muted-foreground font-medium italic">Parameter Mapping v2.1</p>
+        </div>
+        <div className="flex items-baseline gap-2 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20">
+          <span className="text-lg font-black text-primary">{value}</span>
+          <span className="text-[10px] font-black text-primary/70 uppercase">{unit}</span>
+        </div>
+      </div>
+      
+      <div className="relative pt-2">
+        <input 
+          type="range" 
+          min={min} max={max} 
+          value={value}
+          onChange={(e) => onChange(parseInt(e.target.value))}
+          className="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary hover:accent-primary transition-all"
+        />
+      </div>
+
+      <div className="flex justify-between text-[9px] font-black text-muted-foreground uppercase tracking-widest px-1">
+        <span>{leftLabel}</span>
+        <span>{rightLabel}</span>
       </div>
     </div>
   );

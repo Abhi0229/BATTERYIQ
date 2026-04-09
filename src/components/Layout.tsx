@@ -7,7 +7,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main>{children}</main>
+      <main className="pt-24 lg:pt-32">{children}</main>
       <Footer />
       <ChatBot />
     </div>
