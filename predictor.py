@@ -11,11 +11,25 @@ import os
 # (loaded once, reused for every prediction)
 # ============================================
 
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR  = os.path.join(BASE_DIR, "models")
+# Use absolute path to the backend/models folder
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 
 def load_model(filename):
-    with open(os.path.join(MODEL_DIR, filename), "rb") as f:
+    path = os.path.join(MODEL_DIR, filename)
+    if not os.path.exists(path):
+        # Fallback to backend dir
+        alt_path = os.path.join(BASE_DIR, filename)
+        if os.path.exists(alt_path):
+            path = alt_path
+        else:
+             # Final fallback to old path
+             old_path = os.path.join(r"c:\Users\Shreeya Vora\Downloads\battery-iq-pro-main\BATTERYIQ\BATTERYIQ\models", filename)
+             if os.path.exists(old_path):
+                  path = old_path
+             else:
+                  raise FileNotFoundError(f"Model {filename} not found at {MODEL_DIR}")
+    with open(path, "rb") as f:
         return pickle.load(f)
 
 stress_model  = load_model("stress_model.pkl")
@@ -24,7 +38,7 @@ rul_model     = load_model("rul_model.pkl")
 eff_model     = load_model("eff_model.pkl")
 feature_cols  = load_model("feature_cols.pkl")
 
-print("✅ All BatteryIQ models loaded successfully!")
+print(f"All BatteryIQ models loaded successfully from {MODEL_DIR}!")
 
 # ============================================
 # HELPER: Human-friendly status labels
@@ -33,23 +47,23 @@ print("✅ All BatteryIQ models loaded successfully!")
 def get_stress_info(stress):
     info = {
         'Low'    : {"message": "Battery is healthy and operating normally.",
-                    "color": "success", "icon": "✅"},
+                    "color": "success", "icon": "[OK]"},
         'Medium' : {"message": "Battery showing signs of aging. Monitor closely.",
-                    "color": "warning", "icon": "⚠️"},
+                    "color": "warning", "icon": "[!]"},
         'High'   : {"message": "Battery under HIGH stress. Service recommended!",
-                    "color": "danger",  "icon": "🚨"}
+                    "color": "danger",  "icon": "[!!]"}
     }
     return info.get(stress, info['Low'])
 
 def get_health_info(score):
     if score >= 85:
-        return {"status": "Excellent",  "color": "success", "icon": "💚"}
+        return {"status": "Excellent",  "color": "success", "icon": "H"}
     elif score >= 70:
-        return {"status": "Good",       "color": "primary", "icon": "💙"}
+        return {"status": "Good",       "color": "primary", "icon": "G"}
     elif score >= 55:
-        return {"status": "Fair",       "color": "warning", "icon": "💛"}
+        return {"status": "Fair",       "color": "warning", "icon": "F"}
     else:
-        return {"status": "Poor",       "color": "danger",  "icon": "❤️"}
+        return {"status": "Poor",       "color": "danger",  "icon": "P"}
 
 def get_rul_info(rul):
     if rul >= 100:
@@ -129,19 +143,19 @@ def _get_driver_summary(stress, health, rul):
     """Simple one-line summary for EV drivers"""
     if stress == 'High' or health < 60 or rul < 20:
         return {
-            "title"  : "⚠️ Battery Needs Attention",
+            "title"  : "[!] Battery Needs Attention",
             "message": "Your battery is showing critical signs. Please visit a service center soon.",
             "color"  : "danger"
         }
     elif stress == 'Medium' or health < 80 or rul < 50:
         return {
-            "title"  : "🔍 Battery Aging Detected",
+            "title"  : "[?] Battery Aging Detected",
             "message": "Your battery is aging normally but worth monitoring on your next service visit.",
             "color"  : "warning"
         }
     else:
         return {
-            "title"  : "✅ Battery is Healthy",
+            "title"  : "[OK] Battery is Healthy",
             "message": "Your battery is in great condition. Keep enjoying your ride!",
             "color"  : "success"
         }
@@ -156,7 +170,16 @@ def get_battery_history(battery_id: str = None) -> dict:
     Returns historical capacity data for charts
     """
     try:
-        data_path = os.path.join(BASE_DIR, "data", "master_df_final.csv")
+        # Inner Root data folder
+        inner_root = os.path.dirname(BASE_DIR)
+        data_path = os.path.join(inner_root, "data", "master_df_final.csv")
+        
+        # Fallbacks
+        if not os.path.exists(data_path):
+             data_path = os.path.join(BASE_DIR, "data", "master_df_final.csv")
+        if not os.path.exists(data_path):
+             data_path = r"c:\Users\Shreeya Vora\Downloads\battery-iq-pro-main\BATTERYIQ\BATTERYIQ\data\master_df_final.csv"
+             
         df = pd.read_csv(data_path)
 
         # Get available batteries
