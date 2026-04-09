@@ -1,6 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Zap, Monitor, HardDrive, Activity, MapPin, BarChart3, Cpu, HelpCircle, Users, BookOpen, DollarSign, Car, Wrench } from 'lucide-react';
+import { 
+  Menu, X, ChevronDown, Zap, Monitor, HardDrive, Activity, 
+  MapPin, BarChart3, Cpu, HelpCircle, Users, BookOpen, 
+  DollarSign, Car, Wrench, LogOut, LayoutDashboard, UserCircle 
+} from 'lucide-react';
 
 interface DropdownItem {
   label: string;
@@ -31,18 +35,20 @@ const companyDropdown: DropdownItem[] = [
 
 function DropdownMenu({ items, isOpen }: { items: DropdownItem[]; isOpen: boolean }) {
   return (
-    <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300 ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-      <div className="glass-strong rounded-xl p-2 min-w-[280px] shadow-2xl border border-white/10">
+    <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-4 transition-all duration-300 ease-out ${isOpen ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}>
+      <div className="glass-strong rounded-2xl p-2 min-w-[300px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/5">
         {items.map((item) => (
           <Link
             key={item.label}
             to={item.href}
-            className="flex items-start gap-3 px-4 py-3 rounded-lg transition-colors duration-200 hover:bg-primary/10 group"
+            className="flex items-start gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 hover:bg-white/5 group active:scale-[0.98]"
           >
-            <div className="mt-0.5 text-primary/70 group-hover:text-primary transition-colors">{item.icon}</div>
+            <div className="mt-1 p-2 bg-white/5 rounded-lg text-primary/70 group-hover:text-primary group-hover:bg-primary/10 transition-all border border-transparent group-hover:border-primary/20">
+              {item.icon}
+            </div>
             <div>
-              <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{item.label}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+              <div className="text-sm font-bold text-white/90 group-hover:text-white transition-colors">{item.label}</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</div>
             </div>
           </Link>
         ))}
@@ -88,110 +94,145 @@ export default function Navbar() {
     { label: 'Company',  dropdown: companyDropdown,  key: 'company'  },
   ];
 
-  const roleIcon = session?.role === 'driver' ? <Car className="w-3 h-3" /> : <Wrench className="w-3 h-3" />;
+  const roleIcon = session?.role === 'driver' ? <Car className="w-3.5 h-3.5" /> : <Wrench className="w-3.5 h-3.5" />;
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'glass-strong shadow-lg shadow-background/50' : 'bg-transparent'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'py-3' : 'py-5'}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-500 ${scrolled ? 'scale-95' : 'scale-100'}`}>
+        <div className={`glass-strong rounded-[24px] border border-white/10 shadow-2xl transition-all duration-500 px-6 lg:px-8 ${scrolled ? 'bg-[#020617]/80 backdrop-blur-xl' : 'bg-transparent overflow-visible'}`}>
+          <div className="flex items-center justify-between h-16 lg:h-18">
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center group-hover:glow-primary transition-all duration-300">
-              <Zap className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-xl font-bold text-foreground">Battery<span className="text-primary">IQ</span></span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => (
-              <div key={item.key} className="relative" onMouseEnter={() => handleEnter(item.key)} onMouseLeave={handleLeave}>
-                <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${activeDropdown === item.key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                  {item.label}
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === item.key ? 'rotate-180' : ''}`} />
-                </button>
-                <DropdownMenu items={item.dropdown} isOpen={activeDropdown === item.key} />
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 group-hover:glow-primary transition-all duration-300 border border-primary/20">
+                <Zap className="w-5 h-5 text-primary fill-primary/20" />
               </div>
-            ))}
-            <Link to="/contact" className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Contact
+              <span className="text-xl font-black text-white tracking-tight">Battery<span className="text-primary italic">IQ</span></span>
             </Link>
-          </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center gap-3">
-            {session ? (
-              <>
-                {/* Role badge */}
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-                  <span className="text-primary">{roleIcon}</span>
-                  <span className="text-xs font-semibold text-primary capitalize">{session.role}</span>
+            {/* Desktop Navigation Links */}
+            <div className="hidden lg:flex items-center gap-1.5 ml-8">
+              {navItems.map((item) => (
+                <div key={item.key} className="relative" onMouseEnter={() => handleEnter(item.key)} onMouseLeave={handleLeave}>
+                  <button className={`flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-bold rounded-xl transition-all duration-200 ${activeDropdown === item.key ? 'text-primary bg-white/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
+                    {item.label}
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === item.key ? 'rotate-180 text-primary' : 'opacity-40'}`} />
+                  </button>
+                  <DropdownMenu items={item.dropdown} isOpen={activeDropdown === item.key} />
                 </div>
-                <Link to="/profile" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  {session.name.split(' ')[0]}
-                </Link>
-                <Link to="/dashboard" className="px-4 py-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="px-5 py-2.5 text-sm font-semibold bg-white/5 border border-white/10 text-foreground rounded-lg hover:bg-white/10 transition-all duration-200"
-                >
-                  Log out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Log in
-                </Link>
-                <Link to="/signup" className="px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all duration-200 glow-primary">
-                  Get Started
-                </Link>
-              </>
-            )}
-          </div>
+              ))}
+              <Link to="/contact" className="px-4 py-2.5 text-[13px] font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                Contact
+              </Link>
+            </div>
 
-          {/* Mobile toggle */}
-          <button className="lg:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            {/* Desktop User / CTA Area */}
+            <div className="hidden lg:flex items-center gap-5 ml-auto pl-8 border-l border-white/10">
+              {session ? (
+                <>
+                  <div className="flex items-center gap-4">
+                    {/* Unique Role Badge */}
+                    <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.1)] group">
+                      <span className="text-primary animate-pulse">{roleIcon}</span>
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest">{session.role}</span>
+                    </div>
+
+                    <Link to="/profile" className="flex items-center gap-2.5 group">
+                      <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary/50 transition-all">
+                         <UserCircle className="w-5 h-5 text-white/40 group-hover:text-primary transition-all" />
+                      </div>
+                      <span className="text-[13px] font-bold text-white/80 group-hover:text-white transition-colors">
+                        {session.name.split(' ')[0]}
+                      </span>
+                    </Link>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Link 
+                      to="/dashboard" 
+                      className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/30 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/10 active:scale-95 group"
+                    >
+                      <LayoutDashboard className="w-4 h-4 group-hover:animate-bounce" />
+                      Dashboard
+                    </Link>
+
+                    <button
+                      onClick={handleLogout}
+                      className="p-2.5 bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-white/40 hover:text-red-500 rounded-xl transition-all active:scale-90 group"
+                      title="Terminate Session"
+                    >
+                      <LogOut className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <Link to="/login" className="text-[13px] font-bold text-white/60 hover:text-white transition-colors">
+                    Log in
+                  </Link>
+                  <Link to="/signup" className="px-6 py-3 bg-primary text-white text-[13px] font-bold rounded-xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_20px_rgba(59,130,246,0.3)] glow-primary">
+                    Get Started
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Toggle */}
+            <button 
+              className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-white/80 border border-white/10"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <div className={`lg:hidden transition-all duration-300 overflow-hidden ${mobileOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="glass-strong px-4 py-6 space-y-4 border-t border-border/30">
-          {navItems.map((item) => (
-            <div key={item.key}>
-              <div className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">{item.label}</div>
-              {item.dropdown.map((sub) => (
-                <Link key={sub.label} to={sub.href} className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-primary/5 transition-colors">
-                  {sub.icon} {sub.label}
-                </Link>
-              ))}
-            </div>
-          ))}
-          <Link to="/contact" className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Contact</Link>
-          <div className="pt-4 border-t border-border/30">
-            {session ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 px-3 py-2 text-sm text-foreground">
-                  {roleIcon}
-                  <span>{session.name}</span>
-                  <span className="text-xs text-muted-foreground capitalize ml-1">({session.role})</span>
+      {/* Mobile Backdrop & Sidebar */}
+      <div 
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300 z-[-1] ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
+        onClick={() => setMobileOpen(false)}
+      />
+      <div className={`fixed top-0 bottom-0 right-0 w-[80%] max-w-sm glass-strong lg:hidden transform transition-transform duration-500 ease-elastic z-[-1] ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex flex-col h-full pt-20 px-6 pb-8">
+           <div className="flex-1 overflow-y-auto space-y-8 py-6 custom-scrollbar">
+              {navItems.map((item) => (
+                <div key={item.key} className="space-y-4">
+                  <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{item.label}</div>
+                  <div className="grid grid-cols-1 gap-1">
+                    {item.dropdown.map((sub) => (
+                      <Link key={sub.label} to={sub.href} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all group">
+                        <div className="p-2 bg-white/5 rounded-xl text-primary/60 group-hover:text-primary transition-all">{sub.icon}</div>
+                        <div className="text-sm font-bold text-white/70 group-hover:text-white">{sub.label}</div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-                <Link to="/dashboard" className="block px-3 py-2.5 text-sm font-bold text-center bg-primary text-primary-foreground rounded-lg">Dashboard</Link>
-                <button onClick={handleLogout} className="w-full py-2.5 text-sm font-semibold border border-border rounded-lg text-muted-foreground hover:text-foreground">Log out</button>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <Link to="/login"  className="flex-1 text-center py-2.5 text-sm font-medium border border-border rounded-lg text-foreground hover:bg-secondary transition-colors">Log in</Link>
-                <Link to="/signup" className="flex-1 text-center py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg">Get Started</Link>
-              </div>
-            )}
-          </div>
+              ))}
+              <div className="h-px bg-white/5" />
+              <Link to="/contact" className="block text-sm font-bold text-white/70 hover:text-white px-3">Contact Presence</Link>
+           </div>
+
+           <div className="pt-8 border-t border-white/10 space-y-4">
+             {session ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-white/5 rounded-2xl border border-white/5">
+                    <UserCircle className="w-6 h-6 text-primary" />
+                    <div>
+                      <div className="text-sm font-bold text-white uppercase tracking-tight">{session.name}</div>
+                      <div className="text-[10px] text-primary font-black uppercase tracking-wider">{session.role} Mode</div>
+                    </div>
+                  </div>
+                  <Link to="/dashboard" className="block w-full text-center py-4 bg-primary text-white text-sm font-black rounded-2xl shadow-xl shadow-primary/20">ACCESS DASHBOARD</Link>
+                  <button onClick={handleLogout} className="w-full py-4 border border-white/10 text-red-400 text-sm font-bold rounded-2xl hover:bg-red-500/10 transition-all">TERMINATE SESSION</button>
+                </div>
+             ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Link to="/login" className="py-4 text-center text-sm font-bold text-white/50 border border-white/10 rounded-2xl hover:bg-white/5">LOGIN</Link>
+                  <Link to="/signup" className="py-4 text-center text-sm font-black bg-primary text-white rounded-2xl">JOIN NOW</Link>
+                </div>
+             )}
+           </div>
         </div>
       </div>
     </nav>
