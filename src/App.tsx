@@ -19,6 +19,8 @@ import Blogs from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import MapPage from "./pages/Map";
+import HistoryPage from "./pages/History";
 
 const queryClient = new QueryClient();
 
@@ -29,21 +31,30 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout><Index /></Layout>} />
-          <Route path="/products" element={<Products />} />
+          {/* Public */}
+          <Route path="/"               element={<Layout><Index /></Layout>} />
+          <Route path="/products"       element={<Products />} />
           <Route path="/products/:productId" element={<ProductDetail />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/blogs" element={<Blogs />} />
-          <Route path="/blogs/:blogId" element={<BlogDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/services"       element={<Services />} />
+          <Route path="/about"          element={<About />} />
+          <Route path="/contact"        element={<Contact />} />
+          <Route path="/pricing"        element={<Pricing />} />
+          <Route path="/faq"            element={<FAQ />} />
+          <Route path="/blogs"          element={<Blogs />} />
+          <Route path="/blogs/:blogId"  element={<BlogDetail />} />
+
+          {/* Auth */}
+          <Route path="/login"          element={<Login />} />
+          <Route path="/signup"         element={<Signup />} />
+
+          {/* Protected */}
+          <Route path="/dashboard"      element={<Dashboard />} />
+          <Route path="/profile"        element={<Profile />} />
+          <Route path="/map"            element={<MapPage />} />
+          <Route path="/history"        element={<HistoryPage />} />
+
+          {/* Fallback */}
+          <Route path="*"              element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

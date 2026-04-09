@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { Zap, Activity, Battery, ShieldAlert, Cpu, History, FileText, MapPin, BarChart3, Upload } from 'lucide-react';
+import { Zap, Activity, Battery, ShieldAlert, Cpu, History, FileText, BarChart3, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const [session, setSession] = useState<{name: string, email: string, role: string} | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fleetStats, setFleetStats] = useState<{avg_health: number; total_batteries: number} | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,6 +18,11 @@ export default function Dashboard() {
       setSession(JSON.parse(s));
     }
     setLoading(false);
+    // Fetch real fleet stats
+    fetch('/api/fleet_stats')
+      .then(r => r.json())
+      .then(json => { if (json.success) setFleetStats({ avg_health: json.avg_health, total_batteries: json.total_batteries }); })
+      .catch(() => {});
   }, [navigate]);
 
   if (loading || !session) return null;
@@ -66,8 +73,10 @@ export default function Dashboard() {
               <Battery className="w-6 h-6 text-orange-500" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">Health Score</p>
-              <p className="font-bold text-foreground">92% Avg</p>
+              <p className="text-xs text-muted-foreground uppercase font-bold">Fleet Avg Health</p>
+              <p className="font-bold text-foreground">
+                {fleetStats ? `${fleetStats.avg_health}%` : '—'}
+              </p>
             </div>
           </div>
         </div>
@@ -106,6 +115,8 @@ function DriverView() {
       const data = await resp.json();
       if (data.success) {
         setResults(data);
+        // Persist latest results for cross-page smart suggestions
+        localStorage.setItem('batteryiq_latest_analysis', JSON.stringify(data));
       }
     } catch (err) {
       console.error('Analysis failed', err);
@@ -489,6 +500,20 @@ function ManualDiagnostics() {
                 status={results.stress_info.message} 
                 color={results.stress_info.color}
               />
+              <ResultCard 
+                label="Cycles Remaining" 
+                value={results.RUL} 
+                status={results.rul_info.status} 
+                color={results.rul_info.color}
+                unit=" cycles"
+              />
+              <ResultCard 
+                label="Efficiency" 
+                value={results.efficiency_score} 
+                status={results.efficiency_info.status} 
+                color={results.efficiency_info.color}
+                unit="%"
+              />
             </div>
             
             <div className="glass-strong rounded-2xl p-6">
@@ -499,6 +524,8 @@ function ManualDiagnostics() {
               <div className="space-y-3">
                 <InsightItem color={results.health_info.color} text={results.health_info.status} />
                 <InsightItem color={results.stress_info.color} text={results.stress_info.message} />
+                <InsightItem color={results.rul_info.color} text={results.rul_info.status} />
+                <InsightItem color={results.efficiency_info.color} text={results.efficiency_info.status} />
               </div>
             </div>
           </div>
@@ -550,20 +577,202 @@ function InsightItem({ color, text }: any) {
 }
 
 function BatchUpload() {
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    if (!selectedFile.name.endsWith('.csv')) {
+      toast.error('Please select a valid CSV file.');
+      return;
+    }
+    
+    setLoading(true);
+    setResults(null);
+
+    const formData = new FormData();
+    formData.append('csv_file', selectedFile);
+
+    try {
+      const res = await fetch('/api/upload_csv', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Batch processed! ${data.saved_count} records saved.`);
+        setResults(data);
+      } else {
+        toast.error(data.error || 'Upload failed');
+      }
+    } catch (err) {
+      toast.error('An error occurred during upload.');
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <div className="glass-strong rounded-2xl p-12 text-center max-w-2xl mx-auto">
-      <FileText className="w-16 h-16 text-primary mb-6 mx-auto" />
-      <h3 className="text-2xl font-bold mb-4">Batch Fleet Diagnostics</h3>
-      <p className="text-muted-foreground mb-8">
-        Upload a CSV file containing sensor logs for multiple batteries. Our AI will process each row and provide a consolidated risk report.
-      </p>
-      <div className="border-2 border-dashed border-primary/20 rounded-2xl p-12 hover:border-primary/50 transition-all cursor-pointer group">
-        <Upload className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-all mx-auto mb-4" />
-        <p className="text-sm text-muted-foreground">Click to browse or drag and drop your battery log (.csv)</p>
+    <div className="space-y-8 max-w-5xl mx-auto">
+      <div className="glass-strong rounded-3xl p-10 text-center border border-white/5 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/10 transition-colors" />
+        
+        <div className="relative z-10">
+          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <Upload className="w-10 h-10 text-primary" />
+          </div>
+          <h3 className="text-3xl font-bold mb-3">Batch Fleet Diagnostics</h3>
+          <p className="text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed">
+            Upload your CSV logs to instantly analyze multiple battery units. 
+            Our AI engine maps 17 distinct sensor parameters to provide high-precision health scores.
+          </p>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleUpload} 
+            accept=".csv" 
+            className="hidden" 
+          />
+          
+          <div 
+            onClick={() => !loading && fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-3xl p-12 transition-all cursor-pointer group/upload relative overflow-hidden ${
+              loading ? 'border-primary/50 bg-primary/5 cursor-wait' : 'border-white/10 hover:border-primary/40 hover:bg-white/5'
+            }`}
+          >
+            {loading ? (
+              <div className="space-y-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+                <p className="font-black text-primary uppercase tracking-widest text-xs animate-pulse">Processing Large Dataset...</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col items-center">
+                  <div className="p-4 bg-white/5 rounded-full mb-4 group-hover/upload:scale-110 group-hover/upload:bg-primary/10 transition-all duration-300">
+                    <FileText className="w-8 h-8 text-muted-foreground group-hover/upload:text-primary" />
+                  </div>
+                  <p className="text-lg font-bold text-foreground mb-1">Select Battery Log CSV</p>
+                  <p className="text-sm text-muted-foreground opacity-60">or drag and drop your file here</p>
+                </div>
+              </>
+            )}
+          </div>
+          
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
+            <a href="/api/download_sample_csv" className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs text-primary font-bold flex items-center gap-2 transition-all border border-white/5">
+              <FileText className="w-3.5 h-3.5" /> Get CSV Template
+            </a>
+            <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground uppercase tracking-widest bg-white/[0.02] px-4 py-2 rounded-xl border border-white/5">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> 17 Sensors</span>
+              <span className="w-px h-3 bg-white/10" />
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> Max 50 Rows</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="mt-8 flex justify-center gap-4">
-        <a href="/api/download_sample_csv" className="text-xs text-primary hover:underline font-bold">Download Sample Template</a>
-      </div>
+
+      {results && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="glass-card p-6 rounded-2xl border border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Total Processed</p>
+              <p className="text-2xl font-bold">{results.total_rows} Units</p>
+            </div>
+            <div className="glass-card p-6 rounded-2xl border border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-green-500 mb-1">Healthy Save</p>
+              <p className="text-2xl font-bold">{results.saved_count} Logs</p>
+            </div>
+            <div className="glass-card p-6 rounded-2xl border border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Avg Fleet Health</p>
+              <p className="text-2xl font-bold">{results.avg_health}%</p>
+            </div>
+            <div className="glass-card p-6 rounded-2xl border border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Errors Found</p>
+              <p className="text-2xl font-bold">{results.errors.length}</p>
+            </div>
+          </div>
+
+          <div className="glass-strong rounded-3xl border border-white/5 overflow-hidden">
+            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+              <h4 className="font-bold flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
+                Batch Result Analysis
+              </h4>
+              {results.errors.length > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-red-400 font-bold bg-red-400/10 px-3 py-1 rounded-full">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {results.errors.length} Problems
+                </span>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-white/[0.03]">
+                  <tr>
+                    <th className="px-6 py-4">Row</th>
+                    <th className="px-6 py-4">Stress Level</th>
+                    <th className="px-6 py-4">Health Score</th>
+                    <th className="px-6 py-4">RUL</th>
+                    <th className="px-6 py-4">Efficiency</th>
+                    <th className="px-12 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 font-medium">
+                  {results.results.map((r: any) => (
+                    <tr key={r.row} className="hover:bg-white/[0.03] transition-colors group">
+                      <td className="px-6 py-4 text-xs font-mono opacity-50">#{r.row}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                          r.stress === 'Low' ? 'text-green-500 bg-green-500/10' :
+                          r.stress === 'Medium' ? 'text-yellow-500 bg-yellow-500/10' :
+                          'text-red-500 bg-red-500/10'
+                        }`}>
+                          {r.stress}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-bold">{r.health}%</span>
+                          <div className="w-20 h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div className={`h-full transition-all duration-1000 ${
+                              r.health > 80 ? 'bg-green-500' : r.health > 50 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`} style={{ width: `${r.health}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{r.rul} cycles</td>
+                      <td className="px-6 py-4 text-sm">{r.efficiency}%</td>
+                      <td className="px-12 py-4">
+                        <div className="flex justify-center">
+                          <a href={`/api/export_pdf/${r.prediction_id}`} className="p-2.5 hover:bg-primary/10 rounded-xl text-primary transition-all group-hover:scale-110">
+                            <FileText className="w-4 h-4" />
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {results.errors.map((err: string, i: number) => (
+                    <tr key={`err-${i}`} className="bg-red-500/[0.02]">
+                      <td className="px-6 py-4 text-xs font-mono opacity-50">—</td>
+                      <td colSpan={4} className="px-6 py-4 text-red-400 text-xs font-medium">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {err}
+                        </div>
+                      </td>
+                      <td className="px-12 py-4"></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

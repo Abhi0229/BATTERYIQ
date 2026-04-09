@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,14 +16,21 @@ import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = 'batteryiq_secret_2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///batteryiq.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'instance', 'batteryiq.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+try:
+    from flask_cors import CORS
+    CORS(app, supports_credentials=True)
+except ImportError:
+    print("WARNING: flask-cors not installed. Cross-origin requests might fail.")
+
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Please log in to access BatteryIQ.'
-login_manager.login_message_category = 'warning'
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    return jsonify({'success': False, 'error': 'Unauthorized', 'login_url': '/login'}), 401
 
 
 # ─────────────────────────────────────────────
@@ -90,17 +98,20 @@ def api_login():
     data    = request.get_json()
     email    = data.get('email', '').strip().lower()
     password = data.get('password')
-    user     = User.query.filter_by(email=email).first()
-    if user and check_password_hash(user.password, password):
-        login_user(user)
-        return jsonify({
-            'success': True,
-            'user': {
-                'name': user.name,
-                'email': user.email,
-                'role': user.role
-            }
-        })
+    try:
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return jsonify({
+                'success': True,
+                'user': {
+                    'name': user.name,
+                    'email': user.email,
+                    'role': user.role
+                }
+            })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Database error: {str(e)}'}), 500
     return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
 
 
@@ -112,33 +123,39 @@ def api_signup():
     password = data.get('password')
     role     = data.get('role', 'driver')
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({'success': False, 'error': 'Email already registered.'}), 400
+    try:
+        if User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'error': 'Email already registered.'}), 400
 
-    new_user = User(
-        name     = name,
-        email    = email,
-        password = generate_password_hash(password),
-        role     = role
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    login_user(new_user)
-    return jsonify({
-        'success': True,
-        'user': {
-            'name': new_user.name,
-            'email': new_user.email,
-            'role': new_user.role
-        }
-    })
+        new_user = User(
+            name     = name,
+            email    = email,
+            password = generate_password_hash(password),
+            role     = role
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+        return jsonify({
+            'success': True,
+            'user': {
+                'name': new_user.name,
+                'email': new_user.email,
+                'role': new_user.role
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Signup failed: {str(e)}'}), 500
 
 
-@app.route('/api/logout')
-@login_required
+@app.route('/api/logout', methods=['GET', 'POST'])
 def api_logout():
-    logout_user()
+    try:
+        logout_user()   # clears Flask session if any
+    except Exception:
+        pass
     return jsonify({'success': True, 'message': 'Logged out.'})
+
 
 
 # ─────────────────────────────────────────────
@@ -227,8 +244,10 @@ def fleet_snapshot():
     """Returns last-cycle stats for all batteries — used by landing page hero card."""
     try:
         import pandas as pd
-        # Path updated to point to data folder in same directory
-        data_path = os.path.join(os.path.dirname(__file__), 'data', 'master_df_final.csv')
+        data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'master_df_final.csv')
+        if not os.path.exists(data_path):
+            return jsonify({'success': False, 'error': f'Data file missing at {data_path}'})
+        
         df = pd.read_csv(data_path)
         last = df.sort_values('cycle_number').groupby('battery_id').last().reset_index()
         batteries = []
@@ -246,9 +265,39 @@ def fleet_snapshot():
         return jsonify({'success': False, 'error': str(e)})
 
 
+@app.route('/api/fleet_stats')
+def fleet_stats():
+    """Returns aggregated stats for the homepage — no login required."""
+    try:
+        import pandas as pd
+        data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'master_df_final.csv')
+        if not os.path.exists(data_path):
+            return jsonify({'success': False, 'error': 'Data not found'})
+
+        df = pd.read_csv(data_path)
+        total_batteries  = int(df['battery_id'].nunique())
+        total_cycles     = int(len(df))
+        avg_health       = round(float(df['health_score'].mean()), 1)
+        avg_efficiency   = round(float(df['efficiency_score'].mean()), 1)
+        stress_counts    = df['stress_label'].value_counts().to_dict()
+        low_stress_pct   = round(100.0 * stress_counts.get('Low', 0) / max(total_cycles, 1), 1)
+
+        return jsonify({
+            'success':        True,
+            'total_batteries': total_batteries,
+            'total_cycles':    total_cycles,
+            'avg_health':      avg_health,
+            'avg_efficiency':  avg_efficiency,
+            'low_stress_pct':  low_stress_pct,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 # ─────────────────────────────────────────────
 # API PREDICT ROUTES (used by driver & technician JS)
 # ─────────────────────────────────────────────
+
 
 FEATURE_COLS = [
     'voltage_mean', 'voltage_min', 'voltage_std',
@@ -381,37 +430,31 @@ def api_predict_technician():
 # CSV UPLOAD — batch predictions (technician only)
 # ─────────────────────────────────────────────
 
-@app.route('/upload_csv', methods=['POST'])
+@app.route('/api/upload_csv', methods=['POST'])
 @login_required
-def upload_csv():
+def api_upload_csv():
     if current_user.role != 'technician':
-        flash('Access restricted to technicians only.', 'danger')
-        return redirect(url_for('dashboard'))
+        return jsonify({'success': False, 'error': 'Access restricted to technicians only.'}), 403
 
     if 'csv_file' not in request.files:
-        flash('No file selected.', 'danger')
-        return redirect(url_for('technician'))
+        return jsonify({'success': False, 'error': 'No file selected.'}), 400
 
     file = request.files['csv_file']
     if file.filename == '' or not file.filename.endswith('.csv'):
-        flash('Please upload a valid .csv file.', 'danger')
-        return redirect(url_for('technician'))
+        return jsonify({'success': False, 'error': 'Please upload a valid .csv file.'}), 400
 
     try:
         df = pd.read_csv(file)
     except Exception as e:
-        flash(f'Could not read CSV: {str(e)}', 'danger')
-        return redirect(url_for('technician'))
+        return jsonify({'success': False, 'error': f'Could not read CSV: {str(e)}'}), 400
 
     # Validate columns
     missing = [c for c in FEATURE_COLS if c not in df.columns]
     if missing:
-        flash(f'Missing columns: {", ".join(missing)}', 'danger')
-        return redirect(url_for('technician'))
+        return jsonify({'success': False, 'error': f'Missing columns: {", ".join(missing)}'}), 400
 
     if df.empty:
-        flash('CSV file is empty.', 'danger')
-        return redirect(url_for('technician'))
+        return jsonify({'success': False, 'error': 'CSV file is empty.'}), 400
 
     results  = []
     errors   = []
@@ -470,17 +513,56 @@ def upload_csv():
     if results:
         highest_risk = max(results, key=lambda r: (risk_weight.get(r['stress'], 0), -r['health'], -r['rul']))
 
-    return render_template(
-        'technician.html',
-        user=current_user,
-        fleet_rows=_summarize_fleet_for_user(current_user.id),
-        csv_results=results,
-        csv_errors=errors,
-        csv_saved=saved,
-        total_rows=len(df),
-        csv_avg_health=avg_health,
-        csv_highest_risk=highest_risk
-    )
+    return jsonify({
+        'success': True,
+        'results': results,
+        'errors': errors,
+        'saved_count': saved,
+        'total_rows': len(df),
+        'avg_health': avg_health,
+        'highest_risk': highest_risk
+    })
+
+
+@app.route('/api/profile/update', methods=['POST'])
+@login_required
+def api_profile_update():
+    data    = request.get_json()
+    name    = data.get('name', '').strip()
+    email   = data.get('email', '').strip().lower()
+    curr_pw = data.get('current_password')
+    new_pw  = data.get('new_password')
+
+    if not name or not email or not curr_pw:
+        return jsonify({'success': False, 'error': 'Name, email, and current password are required.'}), 400
+
+    if not check_password_hash(current_user.password, curr_pw):
+        return jsonify({'success': False, 'error': 'Incorrect current password.'}), 401
+
+    # Check email conflict
+    if email != current_user.email:
+        conflict = User.query.filter_by(email=email).first()
+        if conflict:
+            return jsonify({'success': False, 'error': 'Email is already in use by another account.'}), 400
+
+    current_user.name  = name
+    current_user.email = email
+
+    if new_pw and len(new_pw) >= 6:
+        current_user.password = generate_password_hash(new_pw)
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Profile updated successfully.',
+        'user': {
+            'name': current_user.name,
+            'email': current_user.email,
+            'role': current_user.role
+        }
+    })
+
 
 
 @app.route('/download_sample_csv')
@@ -750,4 +832,6 @@ def edit_profile():
     return render_template('edit_profile.html', user=current_user)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, host='0.0.0.0', port=5000)

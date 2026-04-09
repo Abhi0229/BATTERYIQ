@@ -1,8 +1,32 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Play } from 'lucide-react';
 import BatteryModel from './BatteryModel';
 
+interface HeroStats {
+  total_batteries: number;
+  avg_health: number;
+  total_cycles: number;
+}
+
 export default function Hero() {
+  const [heroStats, setHeroStats] = useState<HeroStats | null>(null);
+
+  useEffect(() => {
+    fetch('/api/fleet_stats')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          setHeroStats({
+            total_batteries: json.total_batteries,
+            avg_health: json.avg_health,
+            total_cycles: json.total_cycles,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <BatteryModel />
@@ -42,20 +66,27 @@ export default function Hero() {
           </Link>
         </div>
 
+        {/* ── Real stats badges ──────────────────────────────────────────── */}
         <div className="mt-16 flex items-center justify-center gap-8 text-xs text-muted-foreground animate-fade-up" style={{ animationDelay: '500ms' }}>
           <div className="flex items-center gap-2">
-            <span className="text-primary font-mono font-bold text-lg">97%</span>
-            <span>Prediction Accuracy</span>
+            <span className="text-primary font-mono font-bold text-lg">
+              {heroStats ? `${heroStats.avg_health}%` : '—'}
+            </span>
+            <span>Avg Health Score</span>
           </div>
           <div className="w-px h-6 bg-border/50" />
           <div className="flex items-center gap-2">
-            <span className="text-primary font-mono font-bold text-lg">10K+</span>
+            <span className="text-primary font-mono font-bold text-lg">
+              {heroStats ? heroStats.total_batteries : '—'}
+            </span>
             <span>Batteries Monitored</span>
           </div>
           <div className="w-px h-6 bg-border/50" />
           <div className="flex items-center gap-2">
-            <span className="text-primary font-mono font-bold text-lg">4</span>
-            <span>AI Models</span>
+            <span className="text-primary font-mono font-bold text-lg">
+              {heroStats ? `${heroStats.total_cycles.toLocaleString()}+` : '—'}
+            </span>
+            <span>Cycles Analyzed</span>
           </div>
         </div>
       </div>
