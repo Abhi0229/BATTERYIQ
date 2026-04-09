@@ -287,12 +287,22 @@ function DriverView() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => setResults(null)}
-                  className="w-full p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-muted-foreground"
-                >
-                  Run New Analysis
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setResults(null)}
+                    className="flex-1 p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-muted-foreground"
+                  >
+                    Run New Analysis
+                  </button>
+                  <a 
+                    href={`/api/export_pdf`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center justify-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-xs font-bold uppercase tracking-widest"
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> PDF Report
+                  </a>
+                </div>
               </div>
             ) : (
               <div className="glass-card h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12">
@@ -349,6 +359,7 @@ function HistoryTable() {
             <th className="pb-3 font-medium text-center">Stress</th>
             <th className="pb-3 font-medium text-center">Health</th>
             <th className="pb-3 font-medium text-center">RUL</th>
+            <th className="pb-3 font-medium text-right">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/30">
@@ -366,6 +377,15 @@ function HistoryTable() {
               </td>
               <td className="py-3 text-center font-bold">{h.health}%</td>
               <td className="py-3 text-center text-muted-foreground">{h.rul} cycles</td>
+              <td className="py-3 text-right">
+                <a 
+                  href={`/api/export_pdf/${h.id}`} 
+                  title="Download PDF"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 hover:bg-primary/20 hover:text-primary transition-all text-muted-foreground"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                </a>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -516,17 +536,21 @@ function ManualDiagnostics() {
               />
             </div>
             
-            <div className="glass-strong rounded-2xl p-6">
-              <h4 className="font-bold flex items-center gap-2 mb-4">
-                <ShieldAlert className="w-5 h-5 text-green-500" />
-                Technical Insights
-              </h4>
-              <div className="space-y-3">
-                <InsightItem color={results.health_info.color} text={results.health_info.status} />
-                <InsightItem color={results.stress_info.color} text={results.stress_info.message} />
-                <InsightItem color={results.rul_info.color} text={results.rul_info.status} />
-                <InsightItem color={results.efficiency_info.color} text={results.efficiency_info.status} />
-              </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setResults(null)}
+                className="flex-1 p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-muted-foreground"
+              >
+                Back to Inputs
+              </button>
+              <a 
+                href={`/api/export_pdf`} 
+                target="_blank" 
+                rel="noreferrer"
+                className="flex items-center justify-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-xs font-bold uppercase tracking-widest"
+              >
+                <FileText className="w-4 h-4 mr-2" /> Download Report
+              </a>
             </div>
           </div>
         ) : (

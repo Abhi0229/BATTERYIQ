@@ -601,6 +601,16 @@ def download_sample_csv():
 # PDF EXPORT — prediction history
 # ─────────────────────────────────────────────
 
+def _draw_cyber_bg(canvas, doc):
+    canvas.saveState()
+    canvas.setFillColor(colors.HexColor('#0f172a')) # Dark Slate Blue
+    canvas.rect(0, 0, 8.5*72, 11.69*72, fill=1)     # Fill Entire A4
+    # Optional: Subtle accent line
+    canvas.setStrokeColor(colors.HexColor('#1e293b'))
+    canvas.setLineWidth(1)
+    canvas.line(1*72, 11*72, 7.5*72, 11*72)
+    canvas.restoreState()
+
 @app.route('/api/export_pdf')
 @login_required
 def export_pdf():
@@ -620,26 +630,29 @@ def export_pdf():
                             leftMargin=2*cm, rightMargin=2*cm,
                             topMargin=2*cm, bottomMargin=2*cm)
 
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('title', parent=styles['Title'],
-                                 fontSize=18, textColor=colors.HexColor('#00d97e'))
-    sub_style   = ParagraphStyle('sub', parent=styles['Normal'],
-                                 fontSize=10, textColor=colors.grey)
-    head_style  = ParagraphStyle('head', parent=styles['Heading2'],
-                                 fontSize=12, textColor=colors.HexColor('#3b82f6'))
-
     story = []
 
+    # Custom styles
+    title_style = ParagraphStyle('title', parent=styles['Title'],
+                                 fontSize=22, textColor=colors.HexColor('#00d97e'),
+                                 alignment=1, spaceAfter=20)
+    sub_style   = ParagraphStyle('sub', parent=styles['Normal'],
+                                 fontSize=10, textColor=colors.HexColor('#94a3b8'),
+                                 alignment=1, spaceAfter=30)
+    head_style  = ParagraphStyle('head', parent=styles['Heading2'],
+                                 fontSize=14, textColor=colors.HexColor('#3b82f6'),
+                                 spaceBefore=20, spaceAfter=10)
+
     # Title
-    story.append(Paragraph('⚡ BatteryIQ — Prediction Report', title_style))
+    story.append(Paragraph('⚡ BatteryIQ — Prediction History Report', title_style))
     story.append(Paragraph(
-        f'User: {current_user.name}  |  Role: {current_user.role.title()}  |  '
-        f'Generated: {datetime.utcnow().strftime("%d %b %Y, %H:%M")} UTC',
+        f'Generated for: {current_user.name}  |  Role: {current_user.role.upper()}  |  '
+        f'{datetime.utcnow().strftime("%d %b %Y, %H:%M")} UTC',
         sub_style))
-    story.append(Spacer(1, 0.5*cm))
+    story.append(Spacer(1, 1*cm))
 
     if not preds:
-        story.append(Paragraph('No predictions found.', styles['Normal']))
+        story.append(Paragraph('No prediction records found in your fleet history.', styles['Normal']))
     else:
         # Summary stats
         avg_health = sum(float(p.health_label) for p in preds) / len(preds)
@@ -649,34 +662,38 @@ def export_pdf():
         for p in preds:
             stress_counts[p.stress_label] = stress_counts.get(p.stress_label, 0) + 1
 
-        story.append(Paragraph('Summary Statistics', head_style))
+        story.append(Paragraph('VIRTUAL FLEET SUMMARY', head_style))
+        story.append(Spacer(1, 0.3*cm))
         summary_data = [
-            ['Metric', 'Value'],
-            ['Total Predictions', str(len(preds))],
-            ['Avg Health Score', f'{avg_health:.1f} / 100'],
-            ['Avg RUL', f'{avg_rul:.0f} cycles'],
-            ['Avg Efficiency', f'{avg_eff:.1f}%'],
-            ['Stress — Low / Medium / High',
-             f'{stress_counts["Low"]} / {stress_counts["Medium"]} / {stress_counts["High"]}'],
+            ['Metric Component', 'Aggregate Value'],
+            ['Total Diagnostic Runs', str(len(preds))],
+            ['Mean Battery Health', f'{avg_health:.1f} / 100.0'],
+            ['Estimated Cycles (RUL)', f'{avg_rul:.0f} cycles remaining'],
+            ['Thermodynamic Efficiency', f'{avg_eff:.1f}%'],
+            ['Stress Distribution (L/M/H)',
+             f'{stress_counts["Low"]} Low | {stress_counts["Medium"]} Med | {stress_counts["High"]} High'],
         ]
         summary_table = Table(summary_data, colWidths=[9*cm, 7*cm])
         summary_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
             ('TEXTCOLOR',  (0, 0), (-1, 0), colors.HexColor('#00d97e')),
             ('FONTNAME',   (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE',   (0, 0), (-1, -1), 9),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
-             [colors.HexColor('#0f172a'), colors.HexColor('#1e293b')]),
+            ('FONTSIZE',   (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#0f172a')),
             ('TEXTCOLOR',  (0, 1), (-1, -1), colors.white),
-            ('GRID',       (0, 0), (-1, -1), 0.5, colors.HexColor('#334155')),
-            ('PADDING',    (0, 0), (-1, -1), 6),
+            ('GRID',       (0, 0), (-1, -1), 0.1, colors.HexColor('#334155')),
+            ('ALIGN',      (0, 1), (0, -1), 'LEFT'),
+            ('ALIGN',      (1, 1), (1, -1), 'RIGHT'),
+            ('PADDING',    (0, 0), (-1, -1), 8),
         ]))
         story.append(summary_table)
-        story.append(Spacer(1, 0.5*cm))
+        story.append(Spacer(1, 1*cm))
 
         # Prediction history table
-        story.append(Paragraph('Prediction History', head_style))
-        table_data = [['#', 'Date & Time', 'Stress', 'Health', 'RUL', 'Efficiency', 'Source']]
+        story.append(Paragraph('FULL DIAGNOSTIC LOG', head_style))
+        story.append(Spacer(1, 0.3*cm))
+        table_data = [['ID', 'Timestamp', 'Stress', 'Health', 'RUL', 'Eff', 'Origin']]
         for i, p in enumerate(preds, 1):
             table_data.append([
                 str(i),
@@ -685,28 +702,27 @@ def export_pdf():
                 f'{float(p.health_label):.1f}',
                 f'{int(p.rul_value)}',
                 f'{p.efficiency_pct:.1f}%',
-                p.source,
+                p.source.upper(),
             ])
 
-        col_widths = [1*cm, 4.5*cm, 2.5*cm, 2.5*cm, 2*cm, 3*cm, 2*cm]
+        col_widths = [1*cm, 4*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2*cm, 1.5*cm]
         hist_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         hist_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
             ('TEXTCOLOR',  (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
             ('FONTNAME',   (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE',   (0, 0), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
-             [colors.HexColor('#0f172a'), colors.HexColor('#1e293b')]),
-            ('TEXTCOLOR',  (0, 1), (-1, -1), colors.white),
-            ('GRID',       (0, 0), (-1, -1), 0.5, colors.HexColor('#334155')),
-            ('PADDING',    (0, 0), (-1, -1), 5),
+            ('FONTSIZE',   (0, 0), (-1, -1), 9),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#0f172a')),
+            ('TEXTCOLOR',  (0, 1), (-1, -1), colors.HexColor('#94a3b8')),
+            ('GRID',       (0, 0), (-1, -1), 0.1, colors.HexColor('#334155')),
             ('ALIGN',      (0, 0), (-1, -1), 'CENTER'),
+            ('PADDING',    (0, 0), (-1, -1), 6),
         ]))
         story.append(hist_table)
 
-    doc.build(story)
+    doc.build(story, onFirstPage=_draw_cyber_bg, onLaterPages=_draw_cyber_bg)
     buf.seek(0)
-    filename = f'batteryiq_report_{current_user.name.replace(" ", "_")}_{datetime.utcnow().strftime("%Y%m%d")}.pdf'
+    filename = f'batteryiq_fleet_report_{datetime.utcnow().strftime("%Y%m%d")}.pdf'
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=True, download_name=filename)
 
@@ -739,46 +755,55 @@ def export_single_pdf(prediction_id):
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph('BatteryIQ — Prediction Detail Report', styles['Title']))
-    story.append(Paragraph(f'Generated: {datetime.utcnow().strftime("%d %b %Y, %H:%M")} UTC', styles['Normal']))
-    story.append(Spacer(1, 0.4*cm))
+    story.append(Paragraph('⚡ BatteryIQ — Diagnostic Report', title_style))
+    story.append(Paragraph(f'User ID: {current_user.email} | Date: {pred.timestamp.strftime("%d %b %Y, %H:%M")}', sub_style))
+    story.append(Spacer(1, 0.8*cm))
 
+    # Result Summary Table
+    story.append(Paragraph('CORE DIAGNOSTICS', head_style))
     summary = [
-        ['Date & Time', pred.timestamp.strftime('%d %b %Y, %H:%M')],
-        ['Input Method', pred.source],
-        ['Stress', pred.stress_label],
-        ['Health Score', f'{float(pred.health_label):.2f}/100'],
-        ['RUL', f'{int(pred.rul_value)} cycles'],
-        ['Efficiency', f'{float(pred.efficiency_pct):.2f}/100']
+        ['Metric Component', 'Calculated Value', 'Standard Range'],
+        ['Estimated Health Score', f'{float(pred.health_label):.2f} / 100', '70.0 - 100.0'],
+        ['Cycles Remaining (RUL)', f'{int(pred.rul_value)} cycles', '0 - 500'],
+        ['Efficiency Coefficient', f'{float(pred.efficiency_pct):.2f}%', '80.0% - 100.0%'],
+        ['Observed Stress Level', pred.stress_label.upper(), 'Low / Med / High'],
     ]
-    summary_table = Table([['Metric', 'Value']] + summary, colWidths=[6.5*cm, 8.5*cm])
+    summary_table = Table(summary, colWidths=[6*cm, 5*cm, 5*cm])
     summary_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#00d97e')),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-        ('PADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 0.1, colors.HexColor('#334155')),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#0f172a')),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.white),
+        ('PADDING', (0, 0), (-1, -1), 8),
     ]))
     story.append(summary_table)
-    story.append(Spacer(1, 0.4*cm))
+    story.append(Spacer(1, 1*cm))
 
-    input_rows = [['Input Parameter', 'Value']]
+    # Sensor Inputs Table
+    story.append(Paragraph('DETAILED SENSOR TELEMETRY', head_style))
+    story.append(Spacer(1, 0.3*cm))
+    input_rows = [['Sensor Parameter', 'Recorded Value']]
     for k, v in inputs.items():
-        input_rows.append([str(k), str(v)])
-    input_table = Table(input_rows, colWidths=[6.5*cm, 8.5*cm])
+        input_rows.append([str(k).replace('_', ' ').title(), str(v)])
+    
+    input_table = Table(input_rows, colWidths=[8*cm, 8*cm])
     input_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#334155')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+        ('GRID', (0, 0), (-1, -1), 0.1, colors.HexColor('#334155')),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#0f172a')),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#94a3b8')),
         ('PADDING', (0, 0), (-1, -1), 6),
     ]))
     story.append(input_table)
 
-    doc.build(story)
+    doc.build(story, onFirstPage=_draw_cyber_bg, onLaterPages=_draw_cyber_bg)
     buf.seek(0)
     return send_file(buf, mimetype='application/pdf', as_attachment=True,
-                     download_name=f'batteryiq_prediction_{prediction_id}.pdf')
+                     download_name=f'batteryiq_diagnostic_{prediction_id}.pdf')
 
 
 # ─────────────────────────────────────────────
