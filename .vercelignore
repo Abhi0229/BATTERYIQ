@@ -1,15 +1,11 @@
-# Ignore local development artifacts
-node_modules/
+# Standard Vercel Ignores
 .git/
+node_modules/
 .vercel/
-.github/
-scratch/
-instance/
 
-# Ignore duplicate heavy folders
+# Redundant or bulky local files
 BATTERYIQ/
+instance/
+scratch/
 **/__pycache__/
-*.pkl.tmp
-
-# DO NOT ignore src/ or public/ here, otherwise Vite cannot build the frontend.
-# Vercel handles the separation of frontend/backend based on your vercel.json.
+*.log
