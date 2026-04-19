@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/index.py": {
-      "excludeFiles": "{node_modules,src,public,BATTERYIQ,instance,scratch}/**"
+      "memory": 1024,
+      "maxDuration": 10
     }
   },
   "rewrites": [
