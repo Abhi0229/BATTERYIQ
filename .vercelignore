@@ -1,22 +1,15 @@
-# Ignore frontend source and dependencies in backend bundle
+# Ignore local development artifacts
 node_modules/
-src/
-public/
 .git/
-scratch/
-instance/
 .vercel/
 .github/
-playwright.config.ts
-vitest.config.ts
-tsconfig*.json
-eslint.config.js
-postcss.config.js
-tailwind.config.ts
-components.json
-*.md
+scratch/
+instance/
 
-# Exclude duplicate project structures
+# Ignore duplicate heavy folders
 BATTERYIQ/
 **/__pycache__/
 *.pkl.tmp
+
+# DO NOT ignore src/ or public/ here, otherwise Vite cannot build the frontend.
+# Vercel handles the separation of frontend/backend based on your vercel.json.
