@@ -24,7 +24,7 @@ export default function Hero() {
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -88,13 +88,6 @@ export default function Hero() {
             </span>
             <span>Cycles Analyzed</span>
           </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 animate-fade-up" style={{ animationDelay: '700ms' }}>
-        <span className="text-xs text-muted-foreground">Scroll to explore</span>
-        <div className="w-5 h-8 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1">
-          <div className="w-1 h-2 rounded-full bg-primary animate-bounce" />
         </div>
       </div>
     </section>

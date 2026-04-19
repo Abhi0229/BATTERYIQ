@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_cors import CORS
+import requests
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -855,6 +856,69 @@ def edit_profile():
         return redirect(url_for('dashboard'))
 
     return render_template('edit_profile.html', user=current_user)
+
+
+# ─────────────────────────────────────────────
+# AI CHAT — OLLAMA INTEGRATION
+# ─────────────────────────────────────────────
+
+BATTERYIQ_CONTEXT = """
+You are the BatteryIQ AI Assistant. You are professional, helpful, and an expert in battery intelligence.
+Key Information about BatteryIQ:
+- It's an AI-powered battery health monitoring system for electric fleets.
+- We predict battery stress, health (SOH), remaining useful life (RUL), and efficiency.
+- We use 4 ML models: stress_model, health_model, rul_model, and eff_model, trained on NASA battery data with ~98% accuracy.
+- Features: AI Health Predictor, Fleet Dashboard, Charger Locator, Predictive Maintenance, CSV analysis, and REST API.
+- Pricing Plans: Starter ($299/mo), Professional ($799/mo), Enterprise (Custom).
+- Hardware: BMS Pro Module ($4,200), Sensor Array Kit ($1,800).
+- Location: Mumbai, India. Contact: contact@batteryiq.ai, +91 98765 43210.
+- If the user asks about something outside battery technology or BatteryIQ, politely guide them back to our services.
+"""
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    data = request.get_json()
+    user_message = data.get('message', '')
+    history = data.get('history', []) # Expecting list of {role: 'user/assistant', content: '...'}
+    
+    if not user_message:
+        return jsonify({'success': False, 'error': 'No message provided'}), 400
+
+    ollama_url = "http://localhost:11434/api/chat"
+    
+    # Construct messages for Ollama
+    messages = [{"role": "system", "content": BATTERYIQ_CONTEXT}]
+    
+    # Add history
+    for msg in history:
+        messages.append({
+            "role": msg.get('role', 'user'),
+            "content": msg.get('text', '')
+        })
+    
+    # Add current message
+    messages.append({"role": "user", "content": user_message})
+
+    try:
+        response = requests.post(ollama_url, json={
+            "model": "glm-4.7-flash:latest",
+            "messages": messages,
+            "stream": False
+        }, timeout=60)
+        
+        response.raise_for_status()
+        result = response.json()
+        bot_message = result.get('message', {}).get('content', 'I am sorry, I could not process that.')
+        
+        return jsonify({
+            'success': True,
+            'response': bot_message
+        })
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            'success': False, 
+            'error': f'Ollama connection error: {str(e)}. Make sure Ollama is running locally on port 11434.'
+        }), 503
 
 if __name__ == '__main__':
     with app.app_context():
