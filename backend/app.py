@@ -17,7 +17,15 @@ except ImportError:
 
 app = Flask(__name__)
 app.secret_key = 'batteryiq_secret_2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'instance', 'batteryiq.db')
+
+# Database configuration (Vercel requires /tmp for writability)
+if os.environ.get('VERCEL'):
+    db_path = '/tmp/batteryiq.db'
+else:
+    db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'instance', 'batteryiq.db')
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
