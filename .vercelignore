@@ -1,0 +1,17 @@
+# Ignore frontend source and dependencies in backend bundle
+node_modules/
+src/
+public/
+.git/
+scratch/
+instance/
+.vercel/
+.github/
+playwright.config.ts
+vitest.config.ts
+tsconfig*.json
+eslint.config.js
+postcss.config.js
+tailwind.config.ts
+components.json
+*.md
