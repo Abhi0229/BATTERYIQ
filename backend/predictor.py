@@ -3,8 +3,8 @@
 
 import pickle
 import numpy as np
-import pandas as pd
 import os
+import csv
 
 # ============================================
 # LOAD ALL MODELS AT STARTUP
@@ -91,14 +91,15 @@ def predict_battery_health(input_data: dict) -> dict:
         return {"success": False, "error": "ML Models not loaded. Please check backend/models/"}
     
     try:
-        # Build DataFrame in correct feature order
-        df = pd.DataFrame([input_data])[feature_cols]
+        # Build input vector in correct feature order using numpy
+        # This replaces the heavy Pandas DataFrame approach
+        input_vector = np.array([[float(input_data.get(col, 0)) for col in feature_cols]])
 
-        # Run all 4 models
-        stress     = stress_model.predict(df)[0]
-        health     = round(float(health_model.predict(df)[0]), 2)
-        rul        = max(0, int(round(float(rul_model.predict(df)[0]))))
-        efficiency = round(float(eff_model.predict(df)[0]), 2)
+        # Run all 4 models (they accept numpy arrays)
+        stress     = stress_model.predict(input_vector)[0]
+        health     = round(float(health_model.predict(input_vector)[0]), 2)
+        rul        = max(0, int(round(float(rul_model.predict(input_vector)[0]))))
+        efficiency = round(float(eff_model.predict(input_vector)[0]), 2)
 
         # Clamp values to valid ranges
         health     = max(0, min(100, health))
@@ -130,31 +131,37 @@ def _get_driver_summary(stress, health, rul):
 
 
 # ============================================
-# HISTORY DATA FOR CHARTS
+# HISTORY DATA FOR CHARTS (Lightweight CSV)
 # ============================================
 
 def get_battery_history(battery_id: str = None) -> dict:
     try:
         if not os.path.exists(DATA_PATH):
             return {"success": False, "error": f"Data file missing at {DATA_PATH}"}
-             
-        df = pd.read_csv(DATA_PATH)
-        batteries = sorted(df['battery_id'].unique().tolist())
+        
+        # Lightweight CSV reading without Pandas
+        with open(DATA_PATH, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            data = list(reader)
+
+        batteries = sorted(list(set(row['battery_id'] for row in data)))
 
         if battery_id is None or battery_id not in batteries:
             battery_id = batteries[0]
 
-        batt_df = df[df['battery_id'] == battery_id].sort_values('cycle_number')
+        # Filter and sort
+        batt_rows = [row for row in data if row['battery_id'] == battery_id]
+        batt_rows.sort(key=lambda x: int(x['cycle_number']))
 
         return {
             "success"    : True,
             "battery_id" : battery_id,
             "batteries"  : batteries,
-            "cycles"     : batt_df['cycle_number'].tolist(),
-            "capacity"   : batt_df['capacity'].round(3).tolist(),
-            "health"     : batt_df['health_score'].round(2).tolist(),
-            "efficiency" : batt_df['efficiency_score'].round(2).tolist(),
-            "rul"        : batt_df['RUL'].tolist(),
+            "cycles"     : [int(r['cycle_number']) for r in batt_rows],
+            "capacity"   : [round(float(r['capacity']), 3) for r in batt_rows],
+            "health"     : [round(float(r['health_score']), 2) for r in batt_rows],
+            "efficiency" : [round(float(r['efficiency_score']), 2) for r in batt_rows],
+            "rul"        : [int(float(r['RUL'])) for r in batt_rows],
         }
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": f"History retrieval failed: {str(e)}"}

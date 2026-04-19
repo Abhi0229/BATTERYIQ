@@ -4,6 +4,12 @@ import requests
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+import os, json, io, csv
+from datetime import datetime
+
+# ReportLab imports for global functions
+from reportlab.lib import colors
+
 try:
     from predictor import predict_battery_health
 except ImportError:
@@ -11,9 +17,6 @@ except ImportError:
     import os
     sys.path.append(os.path.dirname(__file__))
     from predictor import predict_battery_health
-import os, json, io
-from datetime import datetime
-import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = 'batteryiq_secret_2024'
@@ -21,11 +24,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.absp
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-try:
-    from flask_cors import CORS
-    CORS(app, supports_credentials=True)
-except ImportError:
-    print("WARNING: flask-cors not installed. Cross-origin requests might fail.")
+CORS(app, supports_credentials=True)
 
 login_manager = LoginManager(app)
 
@@ -158,7 +157,6 @@ def api_logout():
     return jsonify({'success': True, 'message': 'Logged out.'})
 
 
-
 # ─────────────────────────────────────────────
 # DASHBOARD — role-based redirect
 # ─────────────────────────────────────────────
@@ -244,55 +242,70 @@ def history():
 def fleet_snapshot():
     """Returns last-cycle stats for all batteries — used by landing page hero card."""
     try:
-        import pandas as pd
         data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'master_df_final.csv')
         if not os.path.exists(data_path):
             return jsonify({'success': False, 'error': f'Data file missing at {data_path}'})
         
-        df = pd.read_csv(data_path)
-        last = df.sort_values('cycle_number').groupby('battery_id').last().reset_index()
-        batteries = []
-        for _, row in last.iterrows():
-            batteries.append({
-                'id':         row['battery_id'],
-                'health':     round(float(row['health_score']), 1),
-                'stress':     str(row['stress_label']),
-                'rul':        int(row['RUL']),
-                'efficiency': round(float(row['efficiency_score']), 1),
-                'cycle':      int(row['cycle_number']),
-            })
-        return jsonify({'success': True, 'batteries': batteries})
+        # Lightweight last-record logic using a dict
+        last_records = {}
+        with open(data_path, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                bid = row['battery_id']
+                cycle = int(row['cycle_number'])
+                # If new battery or later cycle, update
+                if bid not in last_records or cycle > last_records[bid]['cycle']:
+                    last_records[bid] = {
+                        'id':         bid,
+                        'health':     round(float(row['health_score']), 1),
+                        'stress':     str(row['stress_label']),
+                        'rul':        int(float(row['RUL'])),
+                        'efficiency': round(float(row['efficiency_score']), 1),
+                        'cycle':      cycle,
+                    }
+        
+        return jsonify({'success': True, 'batteries': list(last_records.values())})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': f"Snapshot failed: {str(e)}"})
 
 
 @app.route('/api/fleet_stats')
 def fleet_stats():
     """Returns aggregated stats for the homepage — no login required."""
     try:
-        import pandas as pd
         data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'master_df_final.csv')
         if not os.path.exists(data_path):
             return jsonify({'success': False, 'error': 'Data not found'})
 
-        df = pd.read_csv(data_path)
-        total_batteries  = int(df['battery_id'].nunique())
-        total_cycles     = int(len(df))
-        avg_health       = round(float(df['health_score'].mean()), 1)
-        avg_efficiency   = round(float(df['efficiency_score'].mean()), 1)
-        stress_counts    = df['stress_label'].value_counts().to_dict()
-        low_stress_pct   = round(100.0 * stress_counts.get('Low', 0) / max(total_cycles, 1), 1)
+        total_health = 0
+        total_eff = 0
+        stress_counts = {'Low': 0, 'Medium': 0, 'High': 0}
+        unique_batteries = set()
+        count = 0
+
+        with open(data_path, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                count += 1
+                unique_batteries.add(row['battery_id'])
+                total_health += float(row['health_score'])
+                total_eff += float(row['efficiency_score'])
+                s = row['stress_label']
+                stress_counts[s] = stress_counts.get(s, 0) + 1
+
+        if count == 0:
+            return jsonify({'success': True, 'total_batteries': 0, 'total_cycles': 0})
 
         return jsonify({
             'success':        True,
-            'total_batteries': total_batteries,
-            'total_cycles':    total_cycles,
-            'avg_health':      avg_health,
-            'avg_efficiency':  avg_efficiency,
-            'low_stress_pct':  low_stress_pct,
+            'total_batteries': len(unique_batteries),
+            'total_cycles':    count,
+            'avg_health':      round(total_health / count, 1),
+            'avg_efficiency':  round(total_eff / count, 1),
+            'low_stress_pct':  round(100.0 * stress_counts.get('Low', 0) / count, 1),
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': f"Stats failed: {str(e)}"})
 
 
 # ─────────────────────────────────────────────
@@ -445,23 +458,27 @@ def api_upload_csv():
         return jsonify({'success': False, 'error': 'Please upload a valid .csv file.'}), 400
 
     try:
-        df = pd.read_csv(file)
+        # Read CSV file using standard csv module
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        reader = csv.DictReader(stream)
+        rows = list(reader)
     except Exception as e:
         return jsonify({'success': False, 'error': f'Could not read CSV: {str(e)}'}), 400
 
     # Validate columns
-    missing = [c for c in FEATURE_COLS if c not in df.columns]
+    if not rows:
+        return jsonify({'success': False, 'error': 'CSV file is empty.'}), 400
+        
+    first_row = rows[0]
+    missing = [c for c in FEATURE_COLS if c not in first_row]
     if missing:
         return jsonify({'success': False, 'error': f'Missing columns: {", ".join(missing)}'}), 400
-
-    if df.empty:
-        return jsonify({'success': False, 'error': 'CSV file is empty.'}), 400
 
     results  = []
     errors   = []
     saved    = 0
 
-    for idx, row in df.iterrows():
+    for idx, row in enumerate(rows):
         try:
             input_data = {col: float(row[col]) for col in FEATURE_COLS}
             result     = predict_battery_health(input_data)
@@ -519,7 +536,7 @@ def api_upload_csv():
         'results': results,
         'errors': errors,
         'saved_count': saved,
-        'total_rows': len(df),
+        'total_rows': len(rows),
         'avg_health': avg_health,
         'highest_risk': highest_risk
     })
@@ -565,14 +582,13 @@ def api_profile_update():
     })
 
 
-
 @app.route('/download_sample_csv')
 @login_required
 def download_sample_csv():
     if current_user.role != 'technician':
         return redirect(url_for('dashboard'))
 
-    sample = pd.DataFrame([{
+    sample_data = [{
         'voltage_mean': 3.475, 'voltage_min': 2.470, 'voltage_std': 0.284,
         'current_mean': -0.952, 'current_std': 0.201, 'current_min': -1.001,
         'temp_mean': 8.27, 'temp_max': 12.37, 'temp_std': 1.45,
@@ -588,10 +604,17 @@ def download_sample_csv():
         'voltage_range': 1.10, 'temp_rise': 11.0,
         'power_mean': 4.80, 'energy_delivered': 5.33,
         'ambient_temperature': 24, 'cycle_number': 120
-    }])
+    }]
 
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=FEATURE_COLS)
+    writer.writeheader()
+    for row in sample_data:
+        # Ensure only FEATURE_COLS are written
+        writer.writerow({k: v for k, v in row.items() if k in FEATURE_COLS})
+    
     buf = io.BytesIO()
-    sample.to_csv(buf, index=False)
+    buf.write(output.getvalue().encode('utf-8'))
     buf.seek(0)
     return send_file(buf, mimetype='text/csv',
                      as_attachment=True,
@@ -606,7 +629,6 @@ def _draw_cyber_bg(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor('#0f172a')) # Dark Slate Blue
     canvas.rect(0, 0, 8.5*72, 11.69*72, fill=1)     # Fill Entire A4
-    # Optional: Subtle accent line
     canvas.setStrokeColor(colors.HexColor('#1e293b'))
     canvas.setLineWidth(1)
     canvas.line(1*72, 11*72, 7.5*72, 11*72)
@@ -616,7 +638,6 @@ def _draw_cyber_bg(canvas, doc):
 @login_required
 def export_pdf():
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -631,6 +652,7 @@ def export_pdf():
                             leftMargin=2*cm, rightMargin=2*cm,
                             topMargin=2*cm, bottomMargin=2*cm)
 
+    styles = getSampleStyleSheet()
     story = []
 
     # Custom styles
@@ -732,8 +754,7 @@ def export_pdf():
 @login_required
 def export_single_pdf(prediction_id):
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 
@@ -755,6 +776,17 @@ def export_single_pdf(prediction_id):
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
     styles = getSampleStyleSheet()
     story = []
+    
+    # Custom styles
+    title_style = ParagraphStyle('title', parent=styles['Title'],
+                                 fontSize=20, textColor=colors.HexColor('#00d97e'),
+                                 alignment=1, spaceAfter=20)
+    sub_style   = ParagraphStyle('sub', parent=styles['Normal'],
+                                 fontSize=10, textColor=colors.HexColor('#94a3b8'),
+                                 alignment=1, spaceAfter=20)
+    head_style  = ParagraphStyle('head', parent=styles['Heading2'],
+                                 fontSize=14, textColor=colors.HexColor('#3b82f6'),
+                                 spaceBefore=15, spaceAfter=10)
 
     story.append(Paragraph('⚡ BatteryIQ — Diagnostic Report', title_style))
     story.append(Paragraph(f'User ID: {current_user.email} | Date: {pred.timestamp.strftime("%d %b %Y, %H:%M")}', sub_style))
@@ -806,13 +838,6 @@ def export_single_pdf(prediction_id):
     return send_file(buf, mimetype='application/pdf', as_attachment=True,
                      download_name=f'batteryiq_diagnostic_{prediction_id}.pdf')
 
-
-# ─────────────────────────────────────────────
-# INIT DB & RUN
-# ─────────────────────────────────────────────
-
-with app.app_context():
-    db.create_all()
 
 @app.route('/map')
 @login_required
@@ -879,7 +904,7 @@ Key Information about BatteryIQ:
 def api_chat():
     data = request.get_json()
     user_message = data.get('message', '')
-    history = data.get('history', []) # Expecting list of {role: 'user/assistant', content: '...'}
+    history = data.get('history', []) 
     
     if not user_message:
         return jsonify({'success': False, 'error': 'No message provided'}), 400
@@ -920,7 +945,14 @@ def api_chat():
             'error': f'Ollama connection error: {str(e)}. Make sure Ollama is running locally on port 11434.'
         }), 503
 
+
+# ─────────────────────────────────────────────
+# INIT DB & RUN
+# ─────────────────────────────────────────────
+
+# Create tables if they don't exist
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, host='0.0.0.0', port=5000)

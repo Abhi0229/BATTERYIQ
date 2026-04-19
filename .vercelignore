@@ -15,3 +15,8 @@ postcss.config.js
 tailwind.config.ts
 components.json
 *.md
+
+# Exclude duplicate project structures
+BATTERYIQ/
+**/__pycache__/
+*.pkl.tmp
