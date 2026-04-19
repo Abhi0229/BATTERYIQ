@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{node_modules,src,public,BATTERYIQ,instance,scratch}/**"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/(.*)", "destination": "/$1" }
