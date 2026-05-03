@@ -2,6 +2,8 @@
 
 ![BatteryIQ Banner](file:///C:/Users/abhis/.gemini/antigravity/brain/771a084a-fa3d-444c-883d-ad32ac8f9a0e/batteryiq_readme_banner_1776609115703.png)
 
+### [🚀 Live Demo](https://batteryiq-project.vercel.app/)
+
 > **Real-time diagnostic intelligence for electric vehicle fleets, powered by the NASA Prognostics Dataset and specialized physics-based AI.**
 
 BatteryIQ is a high-performance web application designed for EV owners and fleet technicians. It uses advanced mathematical modeling to predict battery health, remaining useful life (RUL), and efficiency with industry-leading precision—all delivered through a premium, cyberpunk-inspired dashboard.
